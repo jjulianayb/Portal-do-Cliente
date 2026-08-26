@@ -108,3 +108,41 @@ export async function createOrganization(
 
   return { id: body.id, name: body.name, slug: body.slug };
 }
+
+
+export async function getMyOrganization(
+  session: SupabaseSession,
+): Promise<{ id: string; name: string; slug: string } | null> {
+  if (!isSupabaseConfigured) return null;
+
+  const membershipResponse = await fetch(
+    `${supabaseUrl}/rest/v1/memberships?select=organization_id&user_id=eq.${encodeURIComponent(session.user.id)}&limit=1`,
+    {
+      headers: {
+        apikey: supabaseAnonKey!,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    },
+  );
+  if (!membershipResponse.ok) return null;
+
+  const memberships = (await membershipResponse.json()) as Array<{ organization_id?: string }>;
+  const organizationId = memberships[0]?.organization_id;
+  if (!organizationId) return null;
+
+  const organizationResponse = await fetch(
+    `${supabaseUrl}/rest/v1/organizations?select=id,name,slug&id=eq.${encodeURIComponent(organizationId)}&limit=1`,
+    {
+      headers: {
+        apikey: supabaseAnonKey!,
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    },
+  );
+  if (!organizationResponse.ok) return null;
+
+  const organizations = (await organizationResponse.json()) as Array<{ id?: string; name?: string; slug?: string }>;
+  const organization = organizations[0];
+  if (!organization?.id || !organization.name || !organization.slug) return null;
+  return { id: organization.id, name: organization.name, slug: organization.slug };
+}
