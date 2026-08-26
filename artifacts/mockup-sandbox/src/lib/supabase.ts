@@ -16,6 +16,7 @@ type AuthResponse = {
   user?: AuthUser;
   msg?: string;
   message?: string;
+  hint?: string;
   error_description?: string;
 };
 
@@ -24,7 +25,7 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-function getErrorMessage(body: AuthResponse | { message?: string; hint?: string }): string {
+function getErrorMessage(body: AuthResponse): string {
   return body.error_description ?? body.message ?? body.msg ?? body.hint ?? "Não foi possível concluir a operação.";
 }
 
