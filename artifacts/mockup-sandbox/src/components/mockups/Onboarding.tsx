@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 
 import {
   createOrganization,
+  getMyOrganization,
   isSupabaseConfigured,
   signIn,
   signUp,
@@ -41,17 +42,30 @@ export default function Onboarding() {
 
   useEffect(() => {
     const savedSession = window.localStorage.getItem("youb-session");
-    const savedOrganization = window.localStorage.getItem("youb-organization");
-    if (!savedSession || !savedOrganization) return;
+    if (!savedSession) return;
 
-    try {
-      setSession(JSON.parse(savedSession) as SupabaseSession);
-      setOrganization(JSON.parse(savedOrganization) as { name: string; slug: string });
-      setStep("done");
-    } catch {
-      window.localStorage.removeItem("youb-session");
-      window.localStorage.removeItem("youb-organization");
-    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const restoredSession = JSON.parse(savedSession) as SupabaseSession;
+        setSession(restoredSession);
+        const savedOrganization = window.localStorage.getItem("youb-organization");
+        const existingOrganization = savedOrganization
+          ? (JSON.parse(savedOrganization) as { id: string; name: string; slug: string })
+          : await getMyOrganization(restoredSession);
+        if (cancelled || !existingOrganization) return;
+        setOrganization(existingOrganization);
+        window.localStorage.setItem("youb-organization", JSON.stringify(existingOrganization));
+        setStep("done");
+      } catch {
+        window.localStorage.removeItem("youb-session");
+        window.localStorage.removeItem("youb-organization");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   function resetFeedback() {
@@ -87,7 +101,14 @@ export default function Onboarding() {
       const authenticatedSession = await signIn(email.trim(), password);
       setSession(authenticatedSession);
       window.localStorage.setItem("youb-session", JSON.stringify(authenticatedSession));
-      setStep("organization");
+      const existingOrganization = await getMyOrganization(authenticatedSession);
+      if (existingOrganization) {
+        setOrganization(existingOrganization);
+        window.localStorage.setItem("youb-organization", JSON.stringify(existingOrganization));
+        setStep("done");
+      } else {
+        setStep("organization");
+      }
     } catch (accessError) {
       setError(friendlyError(accessError));
     } finally {
