@@ -11,6 +11,8 @@ jobs:
     env:
       PORT: 4173
       BASE_PATH: /
+      VITE_SUPABASE_URL: https://eqyzswhxjzzzwtwnenur.supabase.co
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
