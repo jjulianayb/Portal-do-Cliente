@@ -27,3 +27,9 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build workspace
         run: pnpm run build
+      - name: Archive deployable preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: youb-netlify-preview
+          path: artifacts/mockup-sandbox/dist
+          if-no-files-found: error
