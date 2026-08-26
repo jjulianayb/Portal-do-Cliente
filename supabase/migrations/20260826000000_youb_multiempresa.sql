@@ -194,3 +194,7 @@ for insert to authenticated with check (public.is_org_member(organization_id));
 drop policy if exists pdis_member_insert on public.pdis;
 create policy pdis_member_insert on public.pdis
 for insert to authenticated with check (public.is_org_member(organization_id));
+
+-- PostgREST privileges; RLS remains the row-level boundary.
+grant select on table public.organizations, public.memberships, public.areas, public.positions, public.employees, public.competencies, public.cycles, public.assessments, public.feedbacks, public.pdis to authenticated;
+grant insert on table public.areas, public.positions, public.employees, public.competencies, public.cycles, public.assessments, public.feedbacks, public.pdis to authenticated;
