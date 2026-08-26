@@ -96,6 +96,17 @@ function getPreviewExamplePath(): string {
   return `${basePath}/preview/ComponentName`;
 }
 
+function getPreviewPath(): string | null {
+  const basePath = getBasePath();
+  const { pathname } = window.location;
+  const local =
+    basePath && pathname.startsWith(basePath)
+      ? pathname.slice(basePath.length) || "/"
+      : pathname;
+  const match = local.match(/^\/preview\/(.+)$/);
+  return match ? match[1] : null;
+}
+
 function Gallery() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-8">
@@ -112,20 +123,15 @@ function Gallery() {
             {getPreviewExamplePath()}
           </code>
         </p>
+        <a
+          className="mt-6 inline-flex rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+          href={`${getBasePath()}/preview/Onboarding`}
+        >
+          Abrir login e onboarding
+        </a>
       </div>
     </div>
   );
-}
-
-function getPreviewPath(): string | null {
-  const basePath = getBasePath();
-  const { pathname } = window.location;
-  const local =
-    basePath && pathname.startsWith(basePath)
-      ? pathname.slice(basePath.length) || "/"
-      : pathname;
-  const match = local.match(/^\/preview\/(.+)$/);
-  return match ? match[1] : null;
 }
 
 function App() {
