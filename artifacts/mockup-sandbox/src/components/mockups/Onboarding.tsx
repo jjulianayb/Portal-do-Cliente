@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 
 import {
@@ -39,6 +39,21 @@ export default function Onboarding() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    const savedSession = window.localStorage.getItem("youb-session");
+    const savedOrganization = window.localStorage.getItem("youb-organization");
+    if (!savedSession || !savedOrganization) return;
+
+    try {
+      setSession(JSON.parse(savedSession) as SupabaseSession);
+      setOrganization(JSON.parse(savedOrganization) as { name: string; slug: string });
+      setStep("done");
+    } catch {
+      window.localStorage.removeItem("youb-session");
+      window.localStorage.removeItem("youb-organization");
+    }
+  }, []);
+
   function resetFeedback() {
     setMessage(null);
     setError(null);
@@ -58,17 +73,20 @@ export default function Onboarding() {
           setPassword("");
           return;
         }
-        setSession({
+        const nextSession = {
           access_token: response.access_token,
           refresh_token: response.refresh_token,
           user: response.user,
-        });
+        };
+        setSession(nextSession);
+        window.localStorage.setItem("youb-session", JSON.stringify(nextSession));
         setStep("organization");
         return;
       }
 
       const authenticatedSession = await signIn(email.trim(), password);
       setSession(authenticatedSession);
+      window.localStorage.setItem("youb-session", JSON.stringify(authenticatedSession));
       setStep("organization");
     } catch (accessError) {
       setError(friendlyError(accessError));
@@ -86,6 +104,7 @@ export default function Onboarding() {
     try {
       const createdOrganization = await createOrganization(session, organizationName.trim());
       setOrganization(createdOrganization);
+      window.localStorage.setItem("youb-organization", JSON.stringify(createdOrganization));
       setStep("done");
     } catch (organizationError) {
       setError(friendlyError(organizationError));
@@ -195,8 +214,17 @@ export default function Onboarding() {
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                   Identificador do espaço: <strong className="text-slate-900">{organization.slug}</strong>
                 </div>
-                <button className="w-full rounded-xl border border-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-[#1e3a6e] transition hover:bg-blue-50" type="button" onClick={() => window.location.reload()}>
-                  Voltar ao início
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Painel inicial</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">A estrutura da sua empresa está pronta. Os próximos módulos serão ativados aqui.</p>
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {["Avaliações", "Feedbacks", "PDIs", "Ciclos"].map((item) => (
+                      <div key={item} className="rounded-xl border border-slate-200 bg-white p-3 text-center text-xs font-semibold text-slate-600">{item}<span className="mt-2 block text-[10px] font-normal text-slate-400">Em breve</span></div>
+                    ))}
+                  </div>
+                </div>
+                <button className="w-full rounded-xl border border-[#1e3a6e] px-5 py-3.5 text-sm font-bold text-[#1e3a6e] transition hover:bg-blue-50" type="button" onClick={() => { window.localStorage.removeItem("youb-session"); window.localStorage.removeItem("youb-organization"); setSession(null); setOrganization(null); setStep("access"); setPassword(""); }}>
+                  Sair da demonstração
                 </button>
               </div>
             )}
