@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentType } from "react";
 
 import { modules as discoveredModules } from "./.generated/mockup-components";
+import Onboarding from "./components/mockups/Onboarding";
 
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 
@@ -136,6 +137,10 @@ function Gallery() {
 
 function App() {
   const previewPath = getPreviewPath();
+
+  if (previewPath === "Onboarding") {
+    return <Onboarding />;
+  }
 
   if (previewPath) {
     return (
