@@ -9,6 +9,7 @@ import {
   signUp,
   type SupabaseSession,
 } from "../../lib/supabase";
+import Dashboard from "./Dashboard";
 
 type Mode = "login" | "signup";
 type Step = "access" | "organization" | "done";
@@ -35,7 +36,7 @@ export default function Onboarding() {
   const [password, setPassword] = useState("");
   const [organizationName, setOrganizationName] = useState("");
   const [session, setSession] = useState<SupabaseSession | null>(null);
-  const [organization, setOrganization] = useState<{ name: string; slug: string } | null>(null);
+  const [organization, setOrganization] = useState<{ id: string; name: string; slug: string } | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -132,6 +133,23 @@ export default function Onboarding() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (step === "done" && organization && session) {
+    return (
+      <Dashboard
+        session={session}
+        organization={organization}
+        onLogout={() => {
+          window.localStorage.removeItem("youb-session");
+          window.localStorage.removeItem("youb-organization");
+          setSession(null);
+          setOrganization(null);
+          setStep("access");
+          setPassword("");
+        }}
+      />
+    );
   }
 
   return (
@@ -255,3 +273,4 @@ export default function Onboarding() {
     </main>
   );
 }
+
