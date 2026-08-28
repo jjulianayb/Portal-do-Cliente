@@ -278,7 +278,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   async function reviewDisciplinaryApproval(approval: DisciplinaryApproval, status: "approved" | "rejected") {
     resetMessages(); setSaving(true);
     try {
-      await apiRequest(session, `disciplinary_action_approvals?id=eq.${encodeURIComponent(approval.id)}&organization_id=eq.${encodeURIComponent(organization.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status, reviewed_at: new Date().toISOString() }) });
+      await apiRequest(session, `disciplinary_action_approvals?id=eq.${encodeURIComponent(approval.id)}&organization_id=eq.${encodeURIComponent(organization.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status, reviewed_by: session.user.id, reviewed_at: new Date().toISOString() }) });
       await apiRequest(session, `disciplinary_actions?id=eq.${encodeURIComponent(approval.action_id)}&organization_id=eq.${encodeURIComponent(organization.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ approval_status: status === "rejected" ? "rejected" : approval.approver_type === "facilitador" && disciplinaryApprovals.some((item) => item.action_id === approval.action_id && item.approver_type === "rh" && item.status === "pending") ? "pending_rh" : "approved" }) });
       setNotice(status === "approved" ? "Etapa de aprovação concluída." : "Medida devolvida como rejeitada."); await loadData();
     } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível atualizar a aprovação."); } finally { setSaving(false); }
