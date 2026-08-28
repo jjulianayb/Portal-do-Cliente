@@ -4,8 +4,10 @@ import type { FormEvent, ReactNode } from "react";
 import type { SupabaseSession } from "../../lib/supabase";
 
 type Organization = { id: string; name: string; slug: string };
-type View = "overview" | "cycles" | "assessments" | "feedbacks" | "pdis";
-type Employee = { id: string; full_name: string; email?: string | null };
+type View = "overview" | "team" | "cycles" | "assessments" | "feedbacks" | "pdis";
+type Employee = { id: string; full_name: string; email?: string | null; area_id?: string | null; position_id?: string | null };
+type Area = { id: string; name: string };
+type Position = { id: string; name: string; level?: string | null };
 type Cycle = { id: string; name: string; starts_at?: string | null; ends_at?: string | null; status: string };
 type Feedback = { id: string; content: string; visibility: string; created_at: string; target_employee_id: string; };
 type Pdi = { id: string; objective: string; status: string; due_date?: string | null; employee_id: string };
@@ -60,6 +62,8 @@ function statusLabel(status: string): string {
 export default function Dashboard({ session, organization, onLogout }: DashboardProps) {
   const [view, setView] = useState<View>("overview");
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
   const [cycles, setCycles] = useState<Cycle[]>([]);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [pdis, setPdis] = useState<Pdi[]>([]);
@@ -71,6 +75,13 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   const [cycleName, setCycleName] = useState("");
   const [cycleStartsAt, setCycleStartsAt] = useState("");
   const [cycleEndsAt, setCycleEndsAt] = useState("");
+  const [employeeName, setEmployeeName] = useState("");
+  const [employeeEmail, setEmployeeEmail] = useState("");
+  const [employeeArea, setEmployeeArea] = useState("");
+  const [employeePosition, setEmployeePosition] = useState("");
+  const [areaName, setAreaName] = useState("");
+  const [positionName, setPositionName] = useState("");
+  const [positionLevel, setPositionLevel] = useState("");
   const [feedbackTarget, setFeedbackTarget] = useState("");
   const [feedbackContent, setFeedbackContent] = useState("");
   const [pdiEmployee, setPdiEmployee] = useState("");
@@ -84,14 +95,18 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     setError(null);
     try {
       const org = encodeURIComponent(organization.id);
-      const [employeeRows, cycleRows, feedbackRows, pdiRows, assessmentRows] = await Promise.all([
-        apiRequest<Employee[]>(session, `employees?select=id,full_name,email&organization_id=eq.${org}&status=eq.active&order=full_name`),
+      const [employeeRows, areaRows, positionRows, cycleRows, feedbackRows, pdiRows, assessmentRows] = await Promise.all([
+        apiRequest<Employee[]>(session, `employees?select=id,full_name,email,area_id,position_id&organization_id=eq.${org}&status=eq.active&order=full_name`),
+        apiRequest<Area[]>(session, `areas?select=id,name&organization_id=eq.${org}&order=name`),
+        apiRequest<Position[]>(session, `positions?select=id,name,level&organization_id=eq.${org}&order=name`),
         apiRequest<Cycle[]>(session, `cycles?select=id,name,starts_at,ends_at,status&organization_id=eq.${org}&order=created_at.desc`),
         apiRequest<Feedback[]>(session, `feedbacks?select=id,content,visibility,created_at,target_employee_id&organization_id=eq.${org}&order=created_at.desc`),
         apiRequest<Pdi[]>(session, `pdis?select=id,objective,status,due_date,employee_id&organization_id=eq.${org}&order=created_at.desc`),
         apiRequest<Assessment[]>(session, `assessments?select=id,subject_employee_id,cycle_id,created_at&organization_id=eq.${org}&order=created_at.desc`),
       ]);
       setEmployees(employeeRows);
+      setAreas(areaRows);
+      setPositions(positionRows);
       setCycles(cycleRows);
       setFeedbacks(feedbackRows);
       setPdis(pdiRows);
@@ -107,11 +122,37 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
 
   const employeeNames = useMemo(() => new Map(employees.map((employee) => [employee.id, employee.full_name])), [employees]);
   const cycleNames = useMemo(() => new Map(cycles.map((cycle) => [cycle.id, cycle.name])), [cycles]);
+  const areaNames = useMemo(() => new Map(areas.map((area) => [area.id, area.name])), [areas]);
+  const positionNames = useMemo(() => new Map(positions.map((position) => [position.id, position.name])), [positions]);
   const activeCycles = cycles.filter((cycle) => cycle.status === "active").length;
   const pendingPdis = pdis.filter((pdi) => pdi.status !== "completed" && pdi.status !== "cancelled").length;
   const firstName = String(session.user.user_metadata?.full_name ?? session.user.email ?? "Time").split(" ")[0];
 
   function resetMessages() { setNotice(null); setError(null); }
+
+  async function createArea(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); resetMessages(); setSaving(true);
+    try {
+      await apiRequest(session, "areas", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, name: areaName.trim() }) });
+      setAreaName(""); setNotice("Área criada."); await loadData();
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível criar a área."); } finally { setSaving(false); }
+  }
+
+  async function createPosition(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); resetMessages(); setSaving(true);
+    try {
+      await apiRequest(session, "positions", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, name: positionName.trim(), level: positionLevel.trim() || null }) });
+      setPositionName(""); setPositionLevel(""); setNotice("Cargo criado."); await loadData();
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível criar o cargo."); } finally { setSaving(false); }
+  }
+
+  async function createEmployee(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); resetMessages(); setSaving(true);
+    try {
+      await apiRequest(session, "employees", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, full_name: employeeName.trim(), email: employeeEmail.trim() || null, area_id: employeeArea || null, position_id: employeePosition || null, status: "active" }) });
+      setEmployeeName(""); setEmployeeEmail(""); setEmployeeArea(""); setEmployeePosition(""); setNotice("Colaborador adicionado à equipe."); await loadData();
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível adicionar o colaborador."); } finally { setSaving(false); }
+  }
 
   async function createCycle(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); resetMessages(); setSaving(true);
@@ -147,6 +188,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
 
   const navItems: Array<{ id: View; label: string; icon: string }> = [
     { id: "overview", label: "Visão geral", icon: "⌂" },
+    { id: "team", label: "Equipe", icon: "♙" },
     { id: "cycles", label: "Ciclos", icon: "◷" },
     { id: "assessments", label: "Avaliações", icon: "▣" },
     { id: "feedbacks", label: "Feedbacks", icon: "↗" },
@@ -170,6 +212,13 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
           <div className="mx-auto mt-8 max-w-6xl">{notice && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}{error && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
             {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Carregando os dados da empresa...</div> : <>
               {view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
+              {view === "team" && <ModuleSection title="Equipe" description="Cadastre colaboradores, áreas e cargos para dar contexto aos ciclos e planos.">
+                <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
+                  <form className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={createEmployee}><h3 className="font-bold text-slate-800">Adicionar colaborador</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600 sm:col-span-2">Nome completo<input className={inputClassName} value={employeeName} onChange={(event) => setEmployeeName(event.target.value)} placeholder="Ex.: Ana Souza" required /></label><label className="text-xs font-bold text-slate-600">E-mail<input className={inputClassName} type="email" value={employeeEmail} onChange={(event) => setEmployeeEmail(event.target.value)} placeholder="ana@empresa.com" /></label><label className="text-xs font-bold text-slate-600">Área<select className={inputClassName} value={employeeArea} onChange={(event) => setEmployeeArea(event.target.value)}><option value="">Sem área</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Cargo<select className={inputClassName} value={employeePosition} onChange={(event) => setEmployeePosition(event.target.value)}><option value="">Sem cargo</option>{positions.map((position) => <option key={position.id} value={position.id}>{position.name}</option>)}</select></label></div><button className={`${buttonClassName} mt-4`} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Adicionar à equipe"}</button></form>
+                  <div className="space-y-4"><form className="rounded-2xl border border-slate-200 bg-white p-5" onSubmit={createArea}><h3 className="font-bold text-slate-800">Nova área</h3><input className={inputClassName} value={areaName} onChange={(event) => setAreaName(event.target.value)} placeholder="Ex.: Produto" required /><button className={`${secondaryButtonClassName} mt-3`} disabled={saving} type="submit">Criar área</button></form><form className="rounded-2xl border border-slate-200 bg-white p-5" onSubmit={createPosition}><h3 className="font-bold text-slate-800">Novo cargo</h3><input className={inputClassName} value={positionName} onChange={(event) => setPositionName(event.target.value)} placeholder="Ex.: Gerente" required /><input className={inputClassName} value={positionLevel} onChange={(event) => setPositionLevel(event.target.value)} placeholder="Nível (opcional)" /><button className={`${secondaryButtonClassName} mt-3`} disabled={saving} type="submit">Criar cargo</button></form></div>
+                </div>
+                <div className="mt-6 space-y-3">{employees.length === 0 ? <EmptyState text="Ainda não há colaboradores cadastrados." /> : employees.map((employee) => <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={employee.id}><div><h3 className="font-bold">{employee.full_name}</h3><p className="mt-1 text-sm text-slate-500">{employee.email || "Sem e-mail"} · {areaNames.get(employee.area_id ?? "") ?? "Sem área"} · {positionNames.get(employee.position_id ?? "") ?? "Sem cargo"}</p></div><StatusPill status="active" /></div>)}</div>
+              </ModuleSection>}
               {view === "cycles" && <ModuleSection title="Ciclos de desenvolvimento" description="Organize períodos de avaliação e acompanhamento da equipe."><form className="mb-6 grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5 md:grid-cols-4" onSubmit={createCycle}><label className="text-xs font-bold text-slate-600 md:col-span-2">Nome do ciclo<input className={inputClassName} value={cycleName} onChange={(event) => setCycleName(event.target.value)} placeholder="Ex.: Ciclo de desempenho 2026" required /></label><label className="text-xs font-bold text-slate-600">Início<input className={inputClassName} type="date" value={cycleStartsAt} onChange={(event) => setCycleStartsAt(event.target.value)} /></label><label className="text-xs font-bold text-slate-600">Fim<input className={inputClassName} type="date" value={cycleEndsAt} onChange={(event) => setCycleEndsAt(event.target.value)} /></label><button className={`${buttonClassName} md:col-span-4 md:w-fit`} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Criar ciclo"}</button></form><div className="space-y-3">{cycles.length === 0 ? <EmptyState text="Ainda não há ciclos criados." /> : cycles.map((cycle) => <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={cycle.id}><div><h3 className="font-bold">{cycle.name}</h3><p className="mt-1 text-sm text-slate-500">{formatDate(cycle.starts_at)} → {formatDate(cycle.ends_at)}</p></div><StatusPill status={cycle.status} /></div>)}</div></ModuleSection>}
               {view === "assessments" && <ModuleSection title="Avaliações" description="Crie avaliações vinculadas a um ciclo e acompanhe o preenchimento."><form className="mb-6 grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5 md:grid-cols-3" onSubmit={createAssessment}><label className="text-xs font-bold text-slate-600">Pessoa avaliada<select className={inputClassName} value={assessmentEmployee} onChange={(event) => setAssessmentEmployee(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Ciclo<select className={inputClassName} value={assessmentCycle} onChange={(event) => setAssessmentCycle(event.target.value)} required><option value="">Selecione</option>{cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}</select></label><div className="flex items-end"><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Nova avaliação"}</button></div></form><div className="space-y-3">{assessments.length === 0 ? <EmptyState text="Crie a primeira avaliação da sua equipe." /> : assessments.map((assessment) => <div className="flex flex-col justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={assessment.id}><div><h3 className="font-bold">{employeeNames.get(assessment.subject_employee_id) ?? "Pessoa da equipe"}</h3><p className="mt-1 text-sm text-slate-500">{cycleNames.get(assessment.cycle_id) ?? "Ciclo"} · criada em {formatDate(assessment.created_at.slice(0, 10))}</p></div><StatusPill status="draft" /></div>)}</div></ModuleSection>}
               {view === "feedbacks" && <ModuleSection title="Feedbacks" description="Registre conversas importantes e mantenha uma cultura de desenvolvimento contínuo."><form className="mb-6 space-y-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={createFeedback}><label className="block text-xs font-bold text-slate-600">Pessoa que receberá o feedback<select className={inputClassName} value={feedbackTarget} onChange={(event) => setFeedbackTarget(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="block text-xs font-bold text-slate-600">Mensagem<textarea className={inputClassName} rows={3} value={feedbackContent} onChange={(event) => setFeedbackContent(event.target.value)} placeholder="Escreva um feedback claro e construtivo..." required /></label><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Registrar feedback"}</button></form><div className="space-y-3">{feedbacks.length === 0 ? <EmptyState text="Nenhum feedback registrado ainda." /> : feedbacks.map((feedback) => <div className="rounded-2xl border border-slate-200 bg-white p-5" key={feedback.id}><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold">Para {employeeNames.get(feedback.target_employee_id) ?? "pessoa da equipe"}</h3><span className="text-xs text-slate-400">{formatDate(feedback.created_at.slice(0, 10))}</span></div><p className="mt-3 text-sm leading-6 text-slate-600">{feedback.content}</p></div>)}</div></ModuleSection>}
