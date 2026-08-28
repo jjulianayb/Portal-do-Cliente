@@ -1,6 +1,7 @@
 -- youB — diretório de equipe, senioridade e estrutura inicial
 
 alter table public.employees add column if not exists seniority text;
+alter table public.employees add column if not exists manager_employee_id uuid references public.employees(id) on delete set null;
 
 do $$
 begin
