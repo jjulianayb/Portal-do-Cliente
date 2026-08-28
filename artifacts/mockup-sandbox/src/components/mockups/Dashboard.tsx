@@ -5,7 +5,7 @@ import type { SupabaseSession } from "../../lib/supabase";
 
 type Organization = { id: string; name: string; slug: string };
 type View = "overview" | "team" | "cycles" | "assessments" | "feedbacks" | "pdis";
-type Employee = { id: string; full_name: string; email?: string | null; area_id?: string | null; position_id?: string | null };
+type Employee = { id: string; full_name: string; email?: string | null; area_id?: string | null; position_id?: string | null; seniority?: "junior" | "pleno" | "senior" | null };
 type Area = { id: string; name: string };
 type Position = { id: string; name: string; level?: string | null };
 type Cycle = { id: string; name: string; starts_at?: string | null; ends_at?: string | null; status: string };
@@ -59,6 +59,10 @@ function statusLabel(status: string): string {
   return ({ draft: "Rascunho", active: "Ativo", closed: "Encerrado", completed: "Concluído", cancelled: "Cancelado" } as Record<string, string>)[status] ?? status;
 }
 
+function seniorityLabel(seniority?: string | null): string {
+  return ({ junior: "Júnior", pleno: "Pleno", senior: "Sênior" } as Record<string, string>)[seniority ?? ""] ?? "Sem senioridade";
+}
+
 export default function Dashboard({ session, organization, onLogout }: DashboardProps) {
   const [view, setView] = useState<View>("overview");
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -79,6 +83,8 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   const [employeeEmail, setEmployeeEmail] = useState("");
   const [employeeArea, setEmployeeArea] = useState("");
   const [employeePosition, setEmployeePosition] = useState("");
+  const [employeeSeniority, setEmployeeSeniority] = useState<"" | "junior" | "pleno" | "senior">("");
+  const [editingEmployee, setEditingEmployee] = useState<string | null>(null);
   const [areaName, setAreaName] = useState("");
   const [positionName, setPositionName] = useState("");
   const [positionLevel, setPositionLevel] = useState("");
@@ -96,7 +102,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     try {
       const org = encodeURIComponent(organization.id);
       const [employeeRows, areaRows, positionRows, cycleRows, feedbackRows, pdiRows, assessmentRows] = await Promise.all([
-        apiRequest<Employee[]>(session, `employees?select=id,full_name,email,area_id,position_id&organization_id=eq.${org}&status=eq.active&order=full_name`),
+        apiRequest<Employee[]>(session, `employees?select=id,full_name,email,area_id,position_id,seniority&organization_id=eq.${org}&status=eq.active&order=full_name`),
         apiRequest<Area[]>(session, `areas?select=id,name&organization_id=eq.${org}&order=name`),
         apiRequest<Position[]>(session, `positions?select=id,name,level&organization_id=eq.${org}&order=name`),
         apiRequest<Cycle[]>(session, `cycles?select=id,name,starts_at,ends_at,status&organization_id=eq.${org}&order=created_at.desc`),
@@ -146,12 +152,27 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível criar o cargo."); } finally { setSaving(false); }
   }
 
-  async function createEmployee(event: FormEvent<HTMLFormElement>) {
+  function startEditEmployee(employee: Employee) {
+    setEditingEmployee(employee.id); setEmployeeName(employee.full_name); setEmployeeEmail(employee.email ?? ""); setEmployeeArea(employee.area_id ?? ""); setEmployeePosition(employee.position_id ?? ""); setEmployeeSeniority(employee.seniority ?? ""); resetMessages();
+  }
+
+  function cancelEditEmployee() {
+    setEditingEmployee(null); setEmployeeName(""); setEmployeeEmail(""); setEmployeeArea(""); setEmployeePosition(""); setEmployeeSeniority("");
+  }
+
+  async function saveEmployee(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); resetMessages(); setSaving(true);
     try {
-      await apiRequest(session, "employees", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, full_name: employeeName.trim(), email: employeeEmail.trim() || null, area_id: employeeArea || null, position_id: employeePosition || null, status: "active" }) });
-      setEmployeeName(""); setEmployeeEmail(""); setEmployeeArea(""); setEmployeePosition(""); setNotice("Colaborador adicionado à equipe."); await loadData();
-    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível adicionar o colaborador."); } finally { setSaving(false); }
+      const payload = { full_name: employeeName.trim(), email: employeeEmail.trim() || null, area_id: employeeArea || null, position_id: employeePosition || null, seniority: employeeSeniority || null };
+      if (editingEmployee) {
+        await apiRequest(session, `employees?id=eq.${encodeURIComponent(editingEmployee)}&organization_id=eq.${encodeURIComponent(organization.id)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(payload) });
+        setNotice("Dados do colaborador atualizados.");
+      } else {
+        await apiRequest(session, "employees", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, ...payload, status: "active" }) });
+        setNotice("Colaborador adicionado à equipe.");
+      }
+      cancelEditEmployee(); await loadData();
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível salvar o colaborador."); } finally { setSaving(false); }
   }
 
   async function createCycle(event: FormEvent<HTMLFormElement>) {
@@ -214,10 +235,11 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
               {view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
               {view === "team" && <ModuleSection title="Equipe" description="Cadastre colaboradores, áreas e cargos para dar contexto aos ciclos e planos.">
                 <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-                  <form className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={createEmployee}><h3 className="font-bold text-slate-800">Adicionar colaborador</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600 sm:col-span-2">Nome completo<input className={inputClassName} value={employeeName} onChange={(event) => setEmployeeName(event.target.value)} placeholder="Ex.: Ana Souza" required /></label><label className="text-xs font-bold text-slate-600">E-mail<input className={inputClassName} type="email" value={employeeEmail} onChange={(event) => setEmployeeEmail(event.target.value)} placeholder="ana@empresa.com" /></label><label className="text-xs font-bold text-slate-600">Área<select className={inputClassName} value={employeeArea} onChange={(event) => setEmployeeArea(event.target.value)}><option value="">Sem área</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Cargo<select className={inputClassName} value={employeePosition} onChange={(event) => setEmployeePosition(event.target.value)}><option value="">Sem cargo</option>{positions.map((position) => <option key={position.id} value={position.id}>{position.name}</option>)}</select></label></div><button className={`${buttonClassName} mt-4`} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Adicionar à equipe"}</button></form>
+                  <form className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={saveEmployee}><h3 className="font-bold text-slate-800">Adicionar colaborador</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600 sm:col-span-2">Nome completo<input className={inputClassName} value={employeeName} onChange={(event) => setEmployeeName(event.target.value)} placeholder="Ex.: Ana Souza" required /></label><label className="text-xs font-bold text-slate-600">E-mail<input className={inputClassName} type="email" value={employeeEmail} onChange={(event) => setEmployeeEmail(event.target.value)} placeholder="ana@empresa.com" /></label><label className="text-xs font-bold text-slate-600">Área<select className={inputClassName} value={employeeArea} onChange={(event) => setEmployeeArea(event.target.value)}><option value="">Sem área</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Cargo<select className={inputClassName} value={employeePosition} onChange={(event) => setEmployeePosition(event.target.value)}><option value="">Sem cargo</option>{positions.map((position) => <option key={position.id} value={position.id}>{position.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Senioridade<select className={inputClassName} value={employeeSeniority} onChange={(event) => setEmployeeSeniority(event.target.value as "" | "junior" | "pleno" | "senior")}><option value="">Selecione</option><option value="junior">Júnior</option><option value="pleno">Pleno</option><option value="senior">Sênior</option></select></label></div><div className="mt-4 flex flex-wrap gap-2"><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : editingEmployee ? "Salvar alterações" : "+ Adicionar à equipe"}</button>{editingEmployee && <button className={secondaryButtonClassName} onClick={cancelEditEmployee} type="button">Cancelar</button>}</div></form>
                   <div className="space-y-4"><form className="rounded-2xl border border-slate-200 bg-white p-5" onSubmit={createArea}><h3 className="font-bold text-slate-800">Nova área</h3><input className={inputClassName} value={areaName} onChange={(event) => setAreaName(event.target.value)} placeholder="Ex.: Produto" required /><button className={`${secondaryButtonClassName} mt-3`} disabled={saving} type="submit">Criar área</button></form><form className="rounded-2xl border border-slate-200 bg-white p-5" onSubmit={createPosition}><h3 className="font-bold text-slate-800">Novo cargo</h3><input className={inputClassName} value={positionName} onChange={(event) => setPositionName(event.target.value)} placeholder="Ex.: Gerente" required /><input className={inputClassName} value={positionLevel} onChange={(event) => setPositionLevel(event.target.value)} placeholder="Nível (opcional)" /><button className={`${secondaryButtonClassName} mt-3`} disabled={saving} type="submit">Criar cargo</button></form></div>
                 </div>
-                <div className="mt-6 space-y-3">{employees.length === 0 ? <EmptyState text="Ainda não há colaboradores cadastrados." /> : employees.map((employee) => <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={employee.id}><div><h3 className="font-bold">{employee.full_name}</h3><p className="mt-1 text-sm text-slate-500">{employee.email || "Sem e-mail"} · {areaNames.get(employee.area_id ?? "") ?? "Sem área"} · {positionNames.get(employee.position_id ?? "") ?? "Sem cargo"}</p></div><StatusPill status="active" /></div>)}</div>
+                <div className="mt-6 space-y-3">{employees.length === 0 ? <EmptyState text="Ainda não há colaboradores cadastrados." /> : employees.map((employee) => <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={employee.id}><div><h3 className="font-bold">{employee.full_name}</h3><p className="mt-1 text-sm text-slate-500">{employee.email || "Sem e-mail"} · {areaNames.get(employee.area_id ?? "") ?? "Sem área"} · {positionNames.get(employee.position_id ?? "") ?? "Sem cargo"} · {seniorityLabel(employee.seniority)}</p></div><div className="flex items-center gap-2"><StatusPill status="active" /><button className={secondaryButtonClassName} onClick={() => startEditEmployee(employee)} type="button">Editar</button></div></div>)}</div>
+                <OrgChart employees={employees} areas={areas} areaNames={areaNames} positionNames={positionNames} />
               </ModuleSection>}
               {view === "cycles" && <ModuleSection title="Ciclos de desenvolvimento" description="Organize períodos de avaliação e acompanhamento da equipe."><form className="mb-6 grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5 md:grid-cols-4" onSubmit={createCycle}><label className="text-xs font-bold text-slate-600 md:col-span-2">Nome do ciclo<input className={inputClassName} value={cycleName} onChange={(event) => setCycleName(event.target.value)} placeholder="Ex.: Ciclo de desempenho 2026" required /></label><label className="text-xs font-bold text-slate-600">Início<input className={inputClassName} type="date" value={cycleStartsAt} onChange={(event) => setCycleStartsAt(event.target.value)} /></label><label className="text-xs font-bold text-slate-600">Fim<input className={inputClassName} type="date" value={cycleEndsAt} onChange={(event) => setCycleEndsAt(event.target.value)} /></label><button className={`${buttonClassName} md:col-span-4 md:w-fit`} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Criar ciclo"}</button></form><div className="space-y-3">{cycles.length === 0 ? <EmptyState text="Ainda não há ciclos criados." /> : cycles.map((cycle) => <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={cycle.id}><div><h3 className="font-bold">{cycle.name}</h3><p className="mt-1 text-sm text-slate-500">{formatDate(cycle.starts_at)} → {formatDate(cycle.ends_at)}</p></div><StatusPill status={cycle.status} /></div>)}</div></ModuleSection>}
               {view === "assessments" && <ModuleSection title="Avaliações" description="Crie avaliações vinculadas a um ciclo e acompanhe o preenchimento."><form className="mb-6 grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5 md:grid-cols-3" onSubmit={createAssessment}><label className="text-xs font-bold text-slate-600">Pessoa avaliada<select className={inputClassName} value={assessmentEmployee} onChange={(event) => setAssessmentEmployee(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Ciclo<select className={inputClassName} value={assessmentCycle} onChange={(event) => setAssessmentCycle(event.target.value)} required><option value="">Selecione</option>{cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}</select></label><div className="flex items-end"><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Nova avaliação"}</button></div></form><div className="space-y-3">{assessments.length === 0 ? <EmptyState text="Crie a primeira avaliação da sua equipe." /> : assessments.map((assessment) => <div className="flex flex-col justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={assessment.id}><div><h3 className="font-bold">{employeeNames.get(assessment.subject_employee_id) ?? "Pessoa da equipe"}</h3><p className="mt-1 text-sm text-slate-500">{cycleNames.get(assessment.cycle_id) ?? "Ciclo"} · criada em {formatDate(assessment.created_at.slice(0, 10))}</p></div><StatusPill status="draft" /></div>)}</div></ModuleSection>}
@@ -228,6 +250,12 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
       </div>
     </main>
   );
+}
+
+function OrgChart({ employees, areas, areaNames, positionNames }: { employees: Employee[]; areas: Area[]; areaNames: Map<string, string>; positionNames: Map<string, string> }) {
+  const grouped = areas.map((area) => ({ area, people: employees.filter((employee) => employee.area_id === area.id) })).filter((group) => group.people.length > 0);
+  const withoutArea = employees.filter((employee) => !employee.area_id || !areaNames.has(employee.area_id));
+  return <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6"><div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center"><div><h3 className="text-lg font-bold">Organograma automático</h3><p className="mt-1 text-sm text-slate-500">Construído a partir das áreas e cargos cadastrados.</p></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">Atualizado agora</span></div>{employees.length === 0 ? <EmptyState text="Cadastre pessoas para visualizar o organograma." /> : <div className="mt-6 flex flex-wrap gap-4">{grouped.map((group) => <div className="min-w-[220px] flex-1 rounded-2xl border border-blue-100 bg-blue-50/50 p-4" key={group.area.id}><div className="border-b border-blue-100 pb-3"><p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-600">Setor</p><h4 className="mt-1 font-extrabold text-[#1e3a6e]">{group.area.name}</h4></div><div className="mt-3 space-y-2">{group.people.map((person) => <div className="rounded-xl bg-white p-3 shadow-sm" key={person.id}><p className="text-sm font-bold">{person.full_name}</p><p className="mt-1 text-xs text-slate-500">{positionNames.get(person.position_id ?? "") ?? "Cargo não informado"} · {seniorityLabel(person.seniority)}</p></div>)}</div></div>)}{withoutArea.length > 0 && <div className="min-w-[220px] flex-1 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4"><div className="border-b border-slate-200 pb-3"><p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">A organizar</p><h4 className="mt-1 font-extrabold text-slate-700">Sem setor</h4></div><div className="mt-3 space-y-2">{withoutArea.map((person) => <div className="rounded-xl bg-white p-3 shadow-sm" key={person.id}><p className="text-sm font-bold">{person.full_name}</p><p className="mt-1 text-xs text-slate-500">Cadastre um setor para posicionar</p></div>)}</div></div>}</div>}</div>;
 }
 
 function Overview({ employees, cycles, feedbacks, pdis, activeCycles, pendingPdis, onView }: { employees: Employee[]; cycles: Cycle[]; feedbacks: Feedback[]; pdis: Pdi[]; activeCycles: number; pendingPdis: number; onView: (view: View) => void }) {
