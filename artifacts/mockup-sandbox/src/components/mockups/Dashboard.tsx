@@ -4,7 +4,7 @@ import type { FormEvent, ReactNode } from "react";
 import type { SupabaseSession } from "../../lib/supabase";
 
 type Organization = { id: string; name: string; slug: string };
-type View = "overview" | "team" | "cycles" | "assessments" | "feedbacks" | "pdis";
+type View = "overview" | "team" | "checkins" | "cycles" | "assessments" | "feedbacks" | "pdis";
 type Employee = { id: string; full_name: string; email?: string | null; area_id?: string | null; position_id?: string | null; seniority?: "junior" | "pleno" | "senior" | null; manager_employee_id?: string | null };
 type Area = { id: string; name: string };
 type Position = { id: string; name: string; level?: string | null };
@@ -12,6 +12,8 @@ type Cycle = { id: string; name: string; starts_at?: string | null; ends_at?: st
 type Feedback = { id: string; content: string; visibility: string; created_at: string; target_employee_id: string; };
 type Pdi = { id: string; objective: string; status: string; due_date?: string | null; employee_id: string };
 type Assessment = { id: string; subject_employee_id: string; cycle_id: string; created_at: string };
+type DisciplinaryAction = { id: string; employee_id: string; action_type: string; reason: string; notes?: string | null; applied_at: string; created_at: string };
+type Checkin = { id: string; employee_id: string; checkin_date: string; mood: number; engagement: number; energy: number; workload: number; note?: string | null; created_at: string };
 
 type DashboardProps = {
   session: SupabaseSession;
@@ -50,6 +52,11 @@ async function apiRequest<T>(session: SupabaseSession, path: string, options: Re
   return body as T;
 }
 
+function localDateValue(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+}
+
 function formatDate(value?: string | null): string {
   if (!value) return "Sem data";
   return new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(`${value}T12:00:00`));
@@ -72,6 +79,19 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [pdis, setPdis] = useState<Pdi[]>([]);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [disciplinaryActions, setDisciplinaryActions] = useState<DisciplinaryAction[]>([]);
+  const [checkins, setCheckins] = useState<Checkin[]>([]);
+  const [disciplinaryEmployee, setDisciplinaryEmployee] = useState("");
+  const [disciplinaryType, setDisciplinaryType] = useState("Orientação formal");
+  const [disciplinaryReason, setDisciplinaryReason] = useState("");
+  const [disciplinaryNotes, setDisciplinaryNotes] = useState("");
+  const [disciplinaryDate, setDisciplinaryDate] = useState(localDateValue());
+  const [checkinEmployee, setCheckinEmployee] = useState("");
+  const [checkinMood, setCheckinMood] = useState("3");
+  const [checkinEngagement, setCheckinEngagement] = useState("3");
+  const [checkinEnergy, setCheckinEnergy] = useState("3");
+  const [checkinWorkload, setCheckinWorkload] = useState("3");
+  const [checkinNote, setCheckinNote] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -102,7 +122,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     setError(null);
     try {
       const org = encodeURIComponent(organization.id);
-      const [employeeRows, areaRows, positionRows, cycleRows, feedbackRows, pdiRows, assessmentRows] = await Promise.all([
+      const [employeeRows, areaRows, positionRows, cycleRows, feedbackRows, pdiRows, assessmentRows, disciplinaryRows, checkinRows] = await Promise.all([
         apiRequest<Employee[]>(session, `employees?select=id,full_name,email,area_id,position_id,seniority,manager_employee_id&organization_id=eq.${org}&status=eq.active&order=full_name`),
         apiRequest<Area[]>(session, `areas?select=id,name&organization_id=eq.${org}&order=name`),
         apiRequest<Position[]>(session, `positions?select=id,name,level&organization_id=eq.${org}&order=name`),
@@ -110,6 +130,8 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
         apiRequest<Feedback[]>(session, `feedbacks?select=id,content,visibility,created_at,target_employee_id&organization_id=eq.${org}&order=created_at.desc`),
         apiRequest<Pdi[]>(session, `pdis?select=id,objective,status,due_date,employee_id&organization_id=eq.${org}&order=created_at.desc`),
         apiRequest<Assessment[]>(session, `assessments?select=id,subject_employee_id,cycle_id,created_at&organization_id=eq.${org}&order=created_at.desc`),
+        apiRequest<DisciplinaryAction[]>(session, `disciplinary_actions?select=id,employee_id,action_type,reason,notes,applied_at,created_at&organization_id=eq.${org}&order=applied_at.desc,created_at.desc`),
+        apiRequest<Checkin[]>(session, `checkins?select=id,employee_id,checkin_date,mood,engagement,energy,workload,note,created_at&organization_id=eq.${org}&order=checkin_date.desc,created_at.desc&limit=100`),
       ]);
       setEmployees(employeeRows);
       setAreas(areaRows);
@@ -118,6 +140,8 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
       setFeedbacks(feedbackRows);
       setPdis(pdiRows);
       setAssessments(assessmentRows);
+      setDisciplinaryActions(disciplinaryRows);
+      setCheckins(checkinRows);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar os dados da empresa.");
     } finally {
@@ -208,10 +232,28 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível criar a avaliação."); } finally { setSaving(false); }
   }
 
+  async function createDisciplinaryAction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); resetMessages(); setSaving(true);
+    try {
+      await apiRequest(session, "disciplinary_actions", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ organization_id: organization.id, employee_id: disciplinaryEmployee, action_type: disciplinaryType, reason: disciplinaryReason.trim(), notes: disciplinaryNotes.trim() || null, applied_at: disciplinaryDate }) });
+      setDisciplinaryEmployee(""); setDisciplinaryReason(""); setDisciplinaryNotes(""); setNotice("Medida disciplinar registrada no histórico do colaborador."); await loadData();
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível registrar a medida disciplinar."); } finally { setSaving(false); }
+  }
+
+  async function createCheckin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); resetMessages(); setSaving(true);
+    try {
+      const today = localDateValue();
+      await apiRequest(session, "checkins", { method: "POST", headers: { Prefer: "return=minimal,resolution=merge-duplicates" }, body: JSON.stringify({ organization_id: organization.id, employee_id: checkinEmployee, checkin_date: today, mood: Number(checkinMood), engagement: Number(checkinEngagement), energy: Number(checkinEnergy), workload: Number(checkinWorkload), note: checkinNote.trim() || null }) });
+      setCheckinNote(""); setNotice("Check-in salvo. Os indicadores foram atualizados."); await loadData();
+    } catch (saveError) { setError(saveError instanceof Error ? saveError.message : "Não foi possível salvar o check-in."); } finally { setSaving(false); }
+  }
+
   const navItems: Array<{ id: View; label: string; icon: string }> = [
     { id: "overview", label: "Visão geral", icon: "⌂" },
     { id: "team", label: "Equipe", icon: "♙" },
-    { id: "cycles", label: "Ciclos", icon: "◷" },
+    { id: "checkins", label: "Clima & check-ins", icon: "♥" },
+    { id: "cycles", label: "Ciclos", icon: "◷" }
     { id: "assessments", label: "Avaliações", icon: "▣" },
     { id: "feedbacks", label: "Feedbacks", icon: "↗" },
     { id: "pdis", label: "PDIs", icon: "◎" },
@@ -241,7 +283,9 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
                 </div>
                 <div className="mt-6 space-y-3">{employees.length === 0 ? <EmptyState text="Ainda não há colaboradores cadastrados." /> : employees.map((employee) => <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={employee.id}><div><h3 className="font-bold">{employee.full_name}</h3><p className="mt-1 text-sm text-slate-500">{employee.email || "Sem e-mail"} · {areaNames.get(employee.area_id ?? "") ?? "Sem área"} · {positionNames.get(employee.position_id ?? "") ?? "Sem cargo"} · {seniorityLabel(employee.seniority)}</p></div><div className="flex items-center gap-2"><StatusPill status="active" /><button className={secondaryButtonClassName} onClick={() => startEditEmployee(employee)} type="button">Editar</button></div></div>)}</div>
                 <OrgChart employees={employees} areas={areas} areaNames={areaNames} positionNames={positionNames} />
+                <div className="mt-8 grid gap-6 xl:grid-cols-[0.8fr_1.2fr]"><form className="rounded-2xl border border-amber-100 bg-amber-50/60 p-5" onSubmit={createDisciplinaryAction}><h3 className="font-bold text-slate-800">Registrar medida disciplinar</h3><p className="mt-1 text-sm text-slate-500">O histórico fica vinculado ao colaborador e visível para RH, diretoria e gestores autorizados.</p><label className="mt-4 block text-xs font-bold text-slate-600">Colaborador<select className={inputClassName} value={disciplinaryEmployee} onChange={(event) => setDisciplinaryEmployee(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="mt-3 block text-xs font-bold text-slate-600">Tipo<select className={inputClassName} value={disciplinaryType} onChange={(event) => setDisciplinaryType(event.target.value)}><option>Orientação formal</option><option>Advertência verbal</option><option>Advertência escrita</option><option>Suspensão</option><option>Plano de melhoria</option><option>Outro</option></select></label><label className="mt-3 block text-xs font-bold text-slate-600">Data<input className={inputClassName} type="date" value={disciplinaryDate} onChange={(event) => setDisciplinaryDate(event.target.value)} required /></label><label className="mt-3 block text-xs font-bold text-slate-600">Motivo e regra aplicada<textarea className={inputClassName} rows={3} value={disciplinaryReason} onChange={(event) => setDisciplinaryReason(event.target.value)} placeholder="Descreva o fato e a regra interna relacionada." required /></label><label className="mt-3 block text-xs font-bold text-slate-600">Observações<textarea className={inputClassName} rows={2} value={disciplinaryNotes} onChange={(event) => setDisciplinaryNotes(event.target.value)} placeholder="Acordos, prazo de acompanhamento ou próximos passos" /></label><button className={`${buttonClassName} mt-4`} disabled={saving} type="submit">{saving ? "Salvando..." : "Registrar no histórico"}</button></form><div className="rounded-2xl border border-slate-200 bg-white p-5"><h3 className="font-bold text-slate-800">Histórico disciplinar</h3><p className="mt-1 text-sm text-slate-500">Registro cronológico por colaborador.</p><div className="mt-4 space-y-3">{disciplinaryActions.length === 0 ? <EmptyState text="Nenhuma medida registrada." /> : disciplinaryActions.map((action) => <div className="rounded-xl border border-slate-200 p-4" key={action.id}><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="font-bold">{employeeNames.get(action.employee_id) ?? "Colaborador"}</p><p className="mt-1 text-xs text-amber-700">{action.action_type} · {formatDate(action.applied_at)}</p></div><span className="text-xs text-slate-400">Histórico</span></div><p className="mt-3 text-sm text-slate-600">{action.reason}</p>{action.notes && <p className="mt-2 text-xs text-slate-500">Observações: {action.notes}</p>}</div>)}</div></div></div>
               </ModuleSection>}
+              {view === "checkins" && <ModuleSection title="Clima & check-ins diários" description="Registre sinais rápidos da equipe e acompanhe clima, energia e engajamento em tempo quase real."><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><MetricCard label="Check-ins recentes" value={checkins.length} /><MetricCard label="Engajamento médio" value={checkins.length ? `${(checkins.reduce((sum, item) => sum + item.engagement, 0) / checkins.length).toFixed(1)}/5` : "—"} /><MetricCard label="Clima médio" value={checkins.length ? `${(checkins.reduce((sum, item) => sum + item.mood, 0) / checkins.length).toFixed(1)}/5` : "—"} /><MetricCard label="Energia média" value={checkins.length ? `${(checkins.reduce((sum, item) => sum + item.energy, 0) / checkins.length).toFixed(1)}/5` : "—"} /></div><form className="mt-6 rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={createCheckin}><h3 className="font-bold text-slate-800">Novo check-in da equipe</h3><p className="mt-1 text-sm text-slate-500">Faça uma leitura rápida. Se já houver um registro hoje para a pessoa, ele será atualizado.</p><div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><label className="text-xs font-bold text-slate-600 lg:col-span-2">Pessoa<select className={inputClassName} value={checkinEmployee} onChange={(event) => setCheckinEmployee(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><RatingSelect label="Clima / humor" value={checkinMood} onChange={setCheckinMood} /><RatingSelect label="Engajamento" value={checkinEngagement} onChange={setCheckinEngagement} /><RatingSelect label="Energia" value={checkinEnergy} onChange={setCheckinEnergy} /><RatingSelect label="Carga de trabalho" value={checkinWorkload} onChange={setCheckinWorkload} /><label className="text-xs font-bold text-slate-600 sm:col-span-2 lg:col-span-4">Observação<textarea className={inputClassName} rows={2} value={checkinNote} onChange={(event) => setCheckinNote(event.target.value)} placeholder="O que merece atenção hoje?" /></label></div><button className={`${buttonClassName} mt-4`} disabled={saving} type="submit">{saving ? "Salvando..." : "Salvar check-in"}</button></form><div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5"><h3 className="font-bold text-slate-800">Leituras recentes</h3><div className="mt-4 space-y-3">{checkins.length === 0 ? <EmptyState text="Faça o primeiro check-in para acompanhar o clima." /> : checkins.slice(0, 20).map((item) => <div className="flex flex-col justify-between gap-2 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center" key={item.id}><div><p className="font-bold">{employeeNames.get(item.employee_id) ?? "Pessoa da equipe"}</p><p className="mt-1 text-xs text-slate-500">{formatDate(item.checkin_date)} · Clima {item.mood}/5 · Engajamento {item.engagement}/5 · Energia {item.energy}/5 · Carga {item.workload}/5</p>{item.note && <p className="mt-2 text-sm text-slate-600">{item.note}</p>}</div><span className="text-xs font-bold text-blue-700">Check-in</span></div>)}</div></div></ModuleSection>}
               {view === "cycles" && <ModuleSection title="Ciclos de desenvolvimento" description="Organize períodos de avaliação e acompanhamento da equipe."><form className="mb-6 grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5 md:grid-cols-4" onSubmit={createCycle}><label className="text-xs font-bold text-slate-600 md:col-span-2">Nome do ciclo<input className={inputClassName} value={cycleName} onChange={(event) => setCycleName(event.target.value)} placeholder="Ex.: Ciclo de desempenho 2026" required /></label><label className="text-xs font-bold text-slate-600">Início<input className={inputClassName} type="date" value={cycleStartsAt} onChange={(event) => setCycleStartsAt(event.target.value)} /></label><label className="text-xs font-bold text-slate-600">Fim<input className={inputClassName} type="date" value={cycleEndsAt} onChange={(event) => setCycleEndsAt(event.target.value)} /></label><button className={`${buttonClassName} md:col-span-4 md:w-fit`} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Criar ciclo"}</button></form><div className="space-y-3">{cycles.length === 0 ? <EmptyState text="Ainda não há ciclos criados." /> : cycles.map((cycle) => <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={cycle.id}><div><h3 className="font-bold">{cycle.name}</h3><p className="mt-1 text-sm text-slate-500">{formatDate(cycle.starts_at)} → {formatDate(cycle.ends_at)}</p></div><StatusPill status={cycle.status} /></div>)}</div></ModuleSection>}
               {view === "assessments" && <ModuleSection title="Avaliações" description="Crie avaliações vinculadas a um ciclo e acompanhe o preenchimento."><form className="mb-6 grid gap-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5 md:grid-cols-3" onSubmit={createAssessment}><label className="text-xs font-bold text-slate-600">Pessoa avaliada<select className={inputClassName} value={assessmentEmployee} onChange={(event) => setAssessmentEmployee(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Ciclo<select className={inputClassName} value={assessmentCycle} onChange={(event) => setAssessmentCycle(event.target.value)} required><option value="">Selecione</option>{cycles.map((cycle) => <option key={cycle.id} value={cycle.id}>{cycle.name}</option>)}</select></label><div className="flex items-end"><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Nova avaliação"}</button></div></form><div className="space-y-3">{assessments.length === 0 ? <EmptyState text="Crie a primeira avaliação da sua equipe." /> : assessments.map((assessment) => <div className="flex flex-col justify-between gap-2 rounded-2xl border border-slate-200 bg-white p-5 sm:flex-row sm:items-center" key={assessment.id}><div><h3 className="font-bold">{employeeNames.get(assessment.subject_employee_id) ?? "Pessoa da equipe"}</h3><p className="mt-1 text-sm text-slate-500">{cycleNames.get(assessment.cycle_id) ?? "Ciclo"} · criada em {formatDate(assessment.created_at.slice(0, 10))}</p></div><StatusPill status="draft" /></div>)}</div></ModuleSection>}
               {view === "feedbacks" && <ModuleSection title="Feedbacks" description="Registre conversas importantes e mantenha uma cultura de desenvolvimento contínuo."><form className="mb-6 space-y-3 rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={createFeedback}><label className="block text-xs font-bold text-slate-600">Pessoa que receberá o feedback<select className={inputClassName} value={feedbackTarget} onChange={(event) => setFeedbackTarget(event.target.value)} required><option value="">Selecione</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select></label><label className="block text-xs font-bold text-slate-600">Mensagem<textarea className={inputClassName} rows={3} value={feedbackContent} onChange={(event) => setFeedbackContent(event.target.value)} placeholder="Escreva um feedback claro e construtivo..." required /></label><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : "+ Registrar feedback"}</button></form><div className="space-y-3">{feedbacks.length === 0 ? <EmptyState text="Nenhum feedback registrado ainda." /> : feedbacks.map((feedback) => <div className="rounded-2xl border border-slate-200 bg-white p-5" key={feedback.id}><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-bold">Para {employeeNames.get(feedback.target_employee_id) ?? "pessoa da equipe"}</h3><span className="text-xs text-slate-400">{formatDate(feedback.created_at.slice(0, 10))}</span></div><p className="mt-3 text-sm leading-6 text-slate-600">{feedback.content}</p></div>)}</div></ModuleSection>}
@@ -252,6 +296,9 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     </main>
   );
 }
+
+function MetricCard({ label, value }: { label: string; value: string | number }) { return <div className="rounded-2xl border border-slate-200 bg-white p-5"><p className="text-sm text-slate-500">{label}</p><p className="mt-2 text-2xl font-extrabold text-[#1e3a6e]">{value}</p></div>; }
+function RatingSelect({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="text-xs font-bold text-slate-600">{label}<select className={inputClassName} value={value} onChange={(event) => onChange(event.target.value)}>{[1, 2, 3, 4, 5].map((score) => <option key={score} value={score}>{score} — {score === 1 ? "Muito baixo" : score === 2 ? "Baixo" : score === 3 ? "Regular" : score === 4 ? "Bom" : "Excelente"}</option>)}</select></label>; }
 
 function OrgChart({ employees, areas, areaNames, positionNames }: { employees: Employee[]; areas: Area[]; areaNames: Map<string, string>; positionNames: Map<string, string> }) {
   const grouped = areas.map((area) => ({ area, people: employees.filter((employee) => employee.area_id === area.id) })).filter((group) => group.people.length > 0);
