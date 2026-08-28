@@ -253,7 +253,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     { id: "overview", label: "Visão geral", icon: "⌂" },
     { id: "team", label: "Equipe", icon: "♙" },
     { id: "checkins", label: "Clima & check-ins", icon: "♥" },
-    { id: "cycles", label: "Ciclos", icon: "◷" }
+    { id: "cycles", label: "Ciclos", icon: "◷" },
     { id: "assessments", label: "Avaliações", icon: "▣" },
     { id: "feedbacks", label: "Feedbacks", icon: "↗" },
     { id: "pdis", label: "PDIs", icon: "◎" },
