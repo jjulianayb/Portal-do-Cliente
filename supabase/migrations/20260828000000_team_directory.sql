@@ -101,3 +101,64 @@ $$;
 
 revoke all on function public.create_organization(text, text) from public;
 grant execute on function public.create_organization(text, text) to authenticated;
+
+-- Medidas disciplinares ficam separadas para preservar o histórico do colaborador.
+create table if not exists public.disciplinary_actions (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  employee_id uuid not null references public.employees(id) on delete cascade,
+  action_type text not null,
+  reason text not null,
+  notes text,
+  applied_at date not null default current_date,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.checkins (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations(id) on delete cascade,
+  employee_id uuid not null references public.employees(id) on delete cascade,
+  checkin_date date not null default current_date,
+  mood smallint not null check (mood between 1 and 5),
+  engagement smallint not null check (engagement between 1 and 5),
+  energy smallint not null check (energy between 1 and 5),
+  workload smallint not null check (workload between 1 and 5),
+  note text,
+  created_by uuid references auth.users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  unique (organization_id, employee_id, checkin_date)
+);
+
+alter table public.disciplinary_actions enable row level security;
+alter table public.checkins enable row level security;
+
+drop policy if exists disciplinary_actions_select_management on public.disciplinary_actions;
+create policy disciplinary_actions_select_management on public.disciplinary_actions for select to authenticated
+using (public.has_org_role(organization_id, array['admin_youb','diretoria','rh','gestor']));
+drop policy if exists disciplinary_actions_insert_management on public.disciplinary_actions;
+create policy disciplinary_actions_insert_management on public.disciplinary_actions for insert to authenticated
+with check (public.has_org_role(organization_id, array['admin_youb','diretoria','rh','gestor']));
+drop policy if exists disciplinary_actions_update_management on public.disciplinary_actions;
+create policy disciplinary_actions_update_management on public.disciplinary_actions for update to authenticated
+using (public.has_org_role(organization_id, array['admin_youb','diretoria','rh']))
+with check (public.has_org_role(organization_id, array['admin_youb','diretoria','rh']));
+drop policy if exists disciplinary_actions_delete_management on public.disciplinary_actions;
+create policy disciplinary_actions_delete_management on public.disciplinary_actions for delete to authenticated
+using (public.has_org_role(organization_id, array['admin_youb','diretoria','rh']));
+
+drop policy if exists checkins_select_management on public.checkins;
+create policy checkins_select_management on public.checkins for select to authenticated
+using (public.has_org_role(organization_id, array['admin_youb','diretoria','rh','gestor']));
+drop policy if exists checkins_insert_management on public.checkins;
+create policy checkins_insert_management on public.checkins for insert to authenticated
+with check (public.has_org_role(organization_id, array['admin_youb','diretoria','rh','gestor']));
+drop policy if exists checkins_update_management on public.checkins;
+create policy checkins_update_management on public.checkins for update to authenticated
+using (public.has_org_role(organization_id, array['admin_youb','diretoria','rh','gestor']))
+with check (public.has_org_role(organization_id, array['admin_youb','diretoria','rh','gestor']));
+drop policy if exists checkins_delete_management on public.checkins;
+create policy checkins_delete_management on public.checkins for delete to authenticated
+using (public.has_org_role(organization_id, array['admin_youb','diretoria','rh']));
+
+grant select, insert, update, delete on public.disciplinary_actions, public.checkins to authenticated;
