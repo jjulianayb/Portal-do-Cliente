@@ -1,5 +1,15 @@
 -- youB — permissões por papel para proteger dados e operações no backend
 
+-- Remove nomes de políticas legados ou criados em tentativas anteriores antes de
+-- recriar a matriz canônica. Não remove dados, apenas regras de acesso.
+do $$
+declare r record;
+begin
+  for r in select schemaname, tablename, policyname from pg_policies where schemaname = 'public' and tablename in ('employees','areas','positions','cycles','assessments','feedbacks','pdis','disciplinary_actions','checkins') loop
+    execute format('drop policy if exists %I on %I.%I', r.policyname, r.schemaname, r.tablename);
+  end loop;
+end $$;
+
 -- Estrutura organizacional: leitura para membros; alteração somente administração/RH.
 drop policy if exists areas_member_select on public.areas;
 drop policy if exists areas_select_members on public.areas;
