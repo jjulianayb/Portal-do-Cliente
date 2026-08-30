@@ -4,6 +4,7 @@ import type { FormEvent, ReactNode } from "react";
 import type { SupabaseSession } from "../../lib/supabase";
 
 type Organization = { id: string; name: string; slug: string };
+type UserRole = "admin_youb" | "diretoria" | "rh" | "gestor" | "colaborador";
 type View = "overview" | "team" | "employee-history" | "checkins" | "cycles" | "assessments" | "feedbacks" | "pdis";
 type Employee = { id: string; full_name: string; email?: string | null; area_id?: string | null; position_id?: string | null; seniority?: "junior" | "pleno" | "senior" | null; manager_employee_id?: string | null };
 type Area = { id: string; name: string };
@@ -77,6 +78,10 @@ function seniorityLabel(seniority?: string | null): string {
   return ({ junior: "Júnior", pleno: "Pleno", senior: "Sênior" } as Record<string, string>)[seniority ?? ""] ?? "Sem senioridade";
 }
 
+function roleLabel(role?: UserRole | null): string {
+  return ({ admin_youb: "Administrador", diretoria: "Diretoria", rh: "RH", gestor: "Gestor", colaborador: "Colaborador" } as Record<string, string>)[role ?? ""] ?? "Acesso não identificado";
+}
+
 export default function Dashboard({ session, organization, onLogout }: DashboardProps) {
   const [view, setView] = useState<View>("overview");
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -112,6 +117,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
   const [checkinEnergy, setCheckinEnergy] = useState("3");
   const [checkinWorkload, setCheckinWorkload] = useState("3");
   const [checkinNote, setCheckinNote] = useState("");
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -143,7 +149,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     setError(null);
     try {
       const org = encodeURIComponent(organization.id);
-      const [employeeRows, areaRows, positionRows, cycleRows, feedbackRows, pdiRows, assessmentRows, disciplinaryRows, approvalRows, approverRows, policyRows, checkinRows] = await Promise.all([
+      const [employeeRows, areaRows, positionRows, cycleRows, feedbackRows, pdiRows, assessmentRows, disciplinaryRows, approvalRows, approverRows, policyRows, checkinRows, membershipRows] = await Promise.all([
         apiRequest<Employee[]>(session, `employees?select=id,full_name,email,area_id,position_id,seniority,manager_employee_id&organization_id=eq.${org}&status=eq.active&order=full_name`),
         apiRequest<Area[]>(session, `areas?select=id,name&organization_id=eq.${org}&order=name`),
         apiRequest<Position[]>(session, `positions?select=id,name,level&organization_id=eq.${org}&order=name`),
@@ -156,6 +162,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
         apiRequest<OrganizationApprover[]>(session, `organization_approvers?select=id,approver_label,email,active&organization_id=eq.${org}&order=active.desc,approver_label,email`),
         apiRequest<DisciplinaryPolicy[]>(session, `disciplinary_policies?select=id,name,description,requires_intermediate_approval,intermediate_approver_label,requires_hr_approval,active,sequence_order&organization_id=eq.${org}&active=eq.true&order=sequence_order,name`),
         apiRequest<Checkin[]>(session, `checkins?select=id,employee_id,checkin_date,mood,engagement,energy,workload,note,created_at&organization_id=eq.${org}&order=checkin_date.desc,created_at.desc&limit=100`),
+        apiRequest<{ role: UserRole }[]>(session, `memberships?select=role&organization_id=eq.${org}&user_id=eq.${encodeURIComponent(session.user.id)}&limit=1`),
       ]);
       setEmployees(employeeRows);
       setAreas(areaRows);
@@ -169,6 +176,7 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
       setOrganizationApprovers(approverRows);
       setDisciplinaryPolicies(policyRows);
       setCheckins(checkinRows);
+      setUserRole(membershipRows[0]?.role ?? null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Não foi possível carregar os dados da empresa.");
     } finally {
@@ -343,6 +351,12 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
     { id: "feedbacks", label: "Feedbacks", icon: "↗" },
     { id: "pdis", label: "PDIs", icon: "◎" },
   ];
+  const visibleNavItems = navItems.filter((item) => {
+    if (!userRole || userRole === "admin_youb" || userRole === "diretoria" || userRole === "rh") return true;
+    if (userRole === "gestor") return ["overview", "employee-history", "checkins", "assessments", "feedbacks", "pdis"].includes(item.id);
+    return item.id === "overview";
+  });
+  const canManageStructure = userRole === null || userRole === "admin_youb" || userRole === "diretoria" || userRole === "rh";
 
   return (
     <main className="min-h-screen bg-[#f5f8fc] text-slate-900">
@@ -351,17 +365,17 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
           <div className="flex items-baseline gap-1 px-2"><span className="text-2xl font-light text-white/75">you</span><span className="text-3xl font-extrabold">B</span></div>
           <div className="mt-8 rounded-2xl bg-white/10 p-4"><p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-100/70">Empresa</p><p className="mt-1 truncate font-bold">{organization.name}</p><p className="mt-1 truncate text-xs text-blue-100/65">{organization.slug}</p></div>
           <nav className="mt-8 grid grid-cols-2 gap-2 lg:block lg:space-y-1">
-            {navItems.map((item) => <button key={item.id} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${view === item.id ? "bg-white text-[#102654]" : "text-blue-100/80 hover:bg-white/10 hover:text-white"}`} onClick={() => { resetMessages(); setView(item.id); }} type="button"><span className="w-5 text-center text-lg">{item.icon}</span>{item.label}</button>)}
+            {visibleNavItems.map((item) => <button key={item.id} className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-semibold transition ${view === item.id ? "bg-white text-[#102654]" : "text-blue-100/80 hover:bg-white/10 hover:text-white"}`} onClick={() => { resetMessages(); setView(item.id); }} type="button"><span className="w-5 text-center text-lg">{item.icon}</span>{item.label}</button>)}
           </nav>
           <button className="mt-8 w-full rounded-xl border border-white/20 px-3 py-3 text-left text-sm font-semibold text-blue-100/80 hover:bg-white/10 hover:text-white" onClick={onLogout} type="button">↩ Sair</button>
         </aside>
 
         <section className="flex-1 p-5 sm:p-8 lg:p-10">
-          <header className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Painel de pessoas</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight">Olá, {firstName}.</h1><p className="mt-1 text-sm text-slate-500">Acompanhe o desenvolvimento da sua equipe em um só lugar.</p></div><div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><span className="text-slate-400">Plano </span><strong className="text-[#1e3a6e]">Essencial</strong></div></header>
+          <header className="mx-auto flex max-w-6xl flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-600">Painel de pessoas</p><h1 className="mt-2 text-3xl font-extrabold tracking-tight">Olá, {firstName}.</h1><p className="mt-1 text-sm text-slate-500">Acompanhe o desenvolvimento da sua equipe em um só lugar.</p></div><div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm"><span className="text-slate-400">Perfil </span><strong className="text-[#1e3a6e]">{roleLabel(userRole)}</strong><span className="mx-2 text-slate-300">·</span><span className="text-slate-400">Plano </span><strong className="text-[#1e3a6e]">Essencial</strong></div></header>
           <div className="mx-auto mt-8 max-w-6xl">{notice && <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{notice}</div>}{error && <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
             {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">Carregando os dados da empresa...</div> : <>
               {view === "overview" && <Overview employees={employees} cycles={cycles} feedbacks={feedbacks} pdis={pdis} activeCycles={activeCycles} pendingPdis={pendingPdis} onView={setView} />}
-              {view === "team" && <ModuleSection title="Equipe" description="Cadastre colaboradores, áreas e cargos para dar contexto aos ciclos e planos.">
+              {canManageStructure && view === "team" && <ModuleSection title="Equipe" description="Cadastre colaboradores, áreas e cargos para dar contexto aos ciclos e planos.">
                 <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
                   <form className="rounded-2xl border border-blue-100 bg-blue-50/60 p-5" onSubmit={saveEmployee}><h3 className="font-bold text-slate-800">Adicionar colaborador</h3><div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="text-xs font-bold text-slate-600 sm:col-span-2">Nome completo<input className={inputClassName} value={employeeName} onChange={(event) => setEmployeeName(event.target.value)} placeholder="Ex.: Ana Souza" required /></label><label className="text-xs font-bold text-slate-600">E-mail<input className={inputClassName} type="email" value={employeeEmail} onChange={(event) => setEmployeeEmail(event.target.value)} placeholder="ana@empresa.com" /></label><label className="text-xs font-bold text-slate-600">Área<select className={inputClassName} value={employeeArea} onChange={(event) => setEmployeeArea(event.target.value)}><option value="">Sem área</option>{areas.map((area) => <option key={area.id} value={area.id}>{area.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Cargo<select className={inputClassName} value={employeePosition} onChange={(event) => setEmployeePosition(event.target.value)}><option value="">Sem cargo</option>{positions.map((position) => <option key={position.id} value={position.id}>{position.name}</option>)}</select></label><label className="text-xs font-bold text-slate-600">Senioridade<select className={inputClassName} value={employeeSeniority} onChange={(event) => setEmployeeSeniority(event.target.value as "" | "junior" | "pleno" | "senior")}><option value="">Selecione</option><option value="junior">Júnior</option><option value="pleno">Pleno</option><option value="senior">Sênior</option></select></label><label className="text-xs font-bold text-slate-600 sm:col-span-2">Gestor direto<select className={inputClassName} value={employeeManager} onChange={(event) => setEmployeeManager(event.target.value)}><option value="">Sem gestor direto</option>{employees.filter((employee) => employee.id !== editingEmployee).map((employee) => <option key={employee.id} value={employee.id}>{employee.full_name}</option>)}</select><span className="mt-1 block font-normal text-slate-500">Use este campo para montar a hierarquia do organograma.</span></label></div><div className="mt-4 flex flex-wrap gap-2"><button className={buttonClassName} disabled={saving} type="submit">{saving ? "Salvando..." : editingEmployee ? "Salvar alterações" : "+ Adicionar à equipe"}</button>{editingEmployee && <button className={secondaryButtonClassName} onClick={cancelEditEmployee} type="button">Cancelar</button>}</div></form>
                   <div className="space-y-4"><form className="rounded-2xl border border-slate-200 bg-white p-5" onSubmit={createArea}><h3 className="font-bold text-slate-800">Nova área</h3><input className={inputClassName} value={areaName} onChange={(event) => setAreaName(event.target.value)} placeholder="Ex.: Produto" required /><button className={`${secondaryButtonClassName} mt-3`} disabled={saving} type="submit">Criar área</button></form><form className="rounded-2xl border border-slate-200 bg-white p-5" onSubmit={createPosition}><h3 className="font-bold text-slate-800">Novo cargo</h3><input className={inputClassName} value={positionName} onChange={(event) => setPositionName(event.target.value)} placeholder="Ex.: Gerente" required /><input className={inputClassName} value={positionLevel} onChange={(event) => setPositionLevel(event.target.value)} placeholder="Nível (opcional)" /><button className={`${secondaryButtonClassName} mt-3`} disabled={saving} type="submit">Criar cargo</button></form></div>
