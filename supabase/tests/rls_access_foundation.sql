@@ -1,4 +1,4 @@
-  -- youB / Sprint 1 — permanent RLS access-foundation suite
+-- youB / Sprint 1 — permanent RLS access-foundation suite
 --
 -- Run only in disposable staging after the legacy migrations and
 -- 20260830020000_access_context_foundation.sql have been applied.
@@ -20,6 +20,7 @@ create temp table rls_suite_results (
   passed boolean not null,
   detail text not null
 ) on commit drop;
+grant select on rls_suite_context, rls_suite_results to authenticated;
 
 -- Fail fast if this file is accidentally run before the migration.
 do $$
