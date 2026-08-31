@@ -1,4 +1,4 @@
--- youB / Sprint 1 — permanent RLS access-foundation suite
+  -- youB / Sprint 1 — permanent RLS access-foundation suite
 --
 -- Run only in disposable staging after the legacy migrations and
 -- 20260830020000_access_context_foundation.sql have been applied.
