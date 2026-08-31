@@ -43,16 +43,11 @@ create table if not exists public.partner_organization_access (
   unique (partner_id, organization_id, access_scope)
 );
 
-create index if not exists idx_platform_memberships_user
-  on public.platform_memberships(user_id);
-create index if not exists idx_partner_memberships_user
-  on public.partner_memberships(user_id);
-create index if not exists idx_partner_memberships_partner
-  on public.partner_memberships(partner_id);
-create index if not exists idx_partner_org_access_org
-  on public.partner_organization_access(organization_id);
-create index if not exists idx_partner_org_access_partner
-  on public.partner_organization_access(partner_id);
+create index if not exists idx_platform_memberships_user on public.platform_memberships(user_id);
+create index if not exists idx_partner_memberships_user on public.partner_memberships(user_id);
+create index if not exists idx_partner_memberships_partner on public.partner_memberships(partner_id);
+create index if not exists idx_partner_org_access_org on public.partner_organization_access(organization_id);
+create index if not exists idx_partner_org_access_partner on public.partner_organization_access(partner_id);
 
 create or replace function public.is_platform_role(allowed_roles text[])
 returns boolean
@@ -129,10 +124,7 @@ alter table public.partner_organization_access enable row level security;
 drop policy if exists platform_memberships_select_scoped on public.platform_memberships;
 create policy platform_memberships_select_scoped
 on public.platform_memberships for select to authenticated
-using (
-  user_id = auth.uid()
-  or public.is_platform_role(array['platform_admin'])
-);
+using (user_id = auth.uid() or public.is_platform_role(array['platform_admin']));
 
 drop policy if exists platform_memberships_manage_admin on public.platform_memberships;
 create policy platform_memberships_manage_admin
@@ -179,8 +171,12 @@ drop policy if exists partner_org_access_select_scoped on public.partner_organiz
 create policy partner_org_access_select_scoped
 on public.partner_organization_access for select to authenticated
 using (
-  public.is_platform_role(array['platform_admin', 'platform_support'])
-  or public.has_partner_role(partner_id, array['partner_admin', 'partner_operator', 'partner_support'])
+  status = 'active'
+  and (expires_at is null or expires_at > now())
+  and (
+    public.is_platform_role(array['platform_admin', 'platform_support'])
+    or public.has_partner_role(partner_id, array['partner_admin', 'partner_operator', 'partner_support'])
+  )
 );
 
 drop policy if exists partner_org_access_manage_scoped on public.partner_organization_access;
