@@ -56,3 +56,11 @@ A nova branch `feature/organizational-memory-event-layer-v1` parte exatamente do
 ## Entrega futura — Training Compliance & Development Calendar
 
 Entrega futura, **NÃO IMPLEMENTADA** e fora do PR #5. Escopo planejado: catálogo de treinamentos obrigatórios e de desenvolvimento; aplicabilidade por cargo, área e unidade; periodicidade e validade; histórico; próxima realização; calendário individual; alertas configuráveis para colaborador, gestor, RH/SSMA e facilitador; convocação; presença/conclusão; certificado; recertificação; status em dia, vencendo, agendamento necessário, vencido ou não aplicável; e integração futura com Bee, Organizational Reading e Impact.
+
+## Decision Engine + Wiring Core V1
+
+A nova branch `feature/decision-engine-v1` parte exatamente do head `023c07d52150955d488ae124fab4a6371b9e3eff` do PR #6, que permanece `READY FOR STAGING`. Esta entrega implementa somente o Decision Engine V1 e o wiring estrutural entre Recommendation, Decision, Approval, Intervention, Action, Outcome, Organizational Memory e Event Layer. O estado inicial é `BUILDING`; após código e Build/typecheck, seguirá para `AUDIT`. Não será promovida a `READY FOR STAGING` antes da auditoria de Dodo.
+
+A separação contratual é obrigatória: Recommendation é proposta; Decision registra escolha humana; Approval é autorização adicional quando exigida; Action é execução; Outcome mede resultado. `decided`/`approved` não significam `executed`.
+
+Ficam fora desta entrega: Organizational Reading Engine, Evidence Engine automático, Bee Runtime, LLM, UI final, scoring, ranking, matching e automações de decisão. A Bee poderá futuramente preparar rascunhos, mas não autoaprovar decisões sensíveis.
