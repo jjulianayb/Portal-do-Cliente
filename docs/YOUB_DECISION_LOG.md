@@ -24,17 +24,36 @@
 | 2026-09-01 | A máquina de estados de autorização deve ser coerente e conservadora. | Impedir execução ativa sem autorização correspondente e impedir estados impossíveis. | `none` só aceita `not_required`; confirmation/approval têm estados próprios; aprovação exige provenance; rejected/expired não executam; sensitive + execute exige approval; completed exige `executed_at`. |
 | 2026-09-01 | Todo Outcome `validated` exige provenance de validação; valor financeiro exige metodologia. | Evitar validações sem responsável/data e valores financeiros sem base metodológica. | `validated_by`/`validated_at` são obrigatórios; `financial_value` exige valor não negativo, `currency` e `measurement_methodology`, sem cálculo de ROI. |
 | 2026-09-01 | Provenance de requester/confirmed_by/approved_by/validated_by será validada na fronteira server-side em etapa futura. | Validar tenant e autoridade sem destruir histórico nem bloquear offboarding. | Não criar agora FK de membership; a fronteira server-side fica fora deste PR. |
+| 2026-09-01 | PR #5 foi congelado no head `f8670a512b14d55e82bde213bf2e4f6de4c4a96a` e promovido documentalmente a `READY FOR STAGING`. | Encerrar o patch de QA sem alterar escopo funcional. | A suíte SQL autenticada continua pendente de staging; `READY FOR STAGING` não é `READY FOR MERGE`. |
 
 ## Estado de governança
 
 - PR #1: `READY FOR STAGING`.
 - PR #2: `READY FOR STAGING`.
 - PR #4: `READY FOR STAGING`.
-- Bee Actions + Impact Foundation V1: `FIX/AUDIT`; aguarda nova auditoria de Dodo.
+- Bee Actions + Impact Foundation V1: `READY FOR STAGING`; head congelado em `f8670a512b14d55e82bde213bf2e4f6de4c4a96a`.
 - Bloqueio comum: execução autenticada em staging descartável ainda pendente.
 
 A implementação continua sem merge e sem aplicação em produção. Nenhuma decisão deste log autoriza migration, staging ou merge.
 
 ## Estado da nova entrega
 
-Bee Actions + Impact Foundation V1: `FIX/AUDIT` após o hardening de QA/governança; aguarda auditoria de Dodo e não será `READY FOR STAGING` antes dela.
+- Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f8670a512b14d55e82bde213bf2e4f6de4c4a96a`; a suíte SQL autenticada continua pendente e isso não é `READY FOR MERGE`.
+- Organizational Memory + Event Layer V1: `AUDIT` na branch `feature/organizational-memory-event-layer-v1`, baseada exatamente em `f8670a512b14d55e82bde213bf2e4f6de4c4a96a`; código e build concluídos, aguardando auditoria de Dodo e sem promoção para `READY FOR STAGING`.
+
+Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f8670a512b14d55e82bde213bf2e4f6de4c4a96a`. A suíte SQL autenticada ainda depende de staging descartável autorizado. Este estado não autoriza merge nem aplicação em produção.
+
+
+| 2026-09-01 | Organizational Memory + Event Layer V1 usa PostgreSQL com relações temporais e eventos leves append-oriented. | Manter a base operacional existente e criar memória estruturada sem graph database ou event sourcing completo. | Não há replay, Kafka/queue, trigger global ou substituição das tabelas operacionais. |
+| 2026-09-01 | Memória distingue explicitamente `fact`, `declaration`, `reading`, `hypothesis`, `decision`, `intervention` e `outcome`; hipótese nunca é fato. | Preservar o tipo epistemológico e evitar promoção silenciosa de incerteza. | `knowledge_kind` é controlado; `hypothesis` permanece identificada como hipótese. |
+| 2026-09-01 | Relações históricas são preservadas por encerramento temporal e nova inserção, sem sobrescrever a história. | Permitir mudanças de gestor/cargo/área/unidade com rastreabilidade. | `valid_until` não pode anteceder `valid_from`; IDs polimórficos são descritivos e não autorizam acesso. |
+| 2026-09-01 | Vocabulários de entidades, relações e eventos são catálogos controlados e extensíveis por mudança explícita. | Impedir texto arbitrário silencioso e manter contrato evolutivo. | Eventos de compliance de treinamento entram apenas como contrato futuro, com `implemented=false`; a funcionalidade não está neste PR. |
+| 2026-09-01 | O event layer registra ocorrências, não estado atual. | Separar fatos ocorridos das tabelas operacionais e evitar event sourcing implícito. | Eventos são append-oriented; V1 não implementa replay nem captura automática por triggers. |
+| 2026-09-01 | RLS de memória/eventos é tenant-safe e conservador. | Evitar leitura genérica por gestor/colaborador e vazamento entre organizações. | Admin/RH gerem no próprio tenant; diretoria lê somente sensibilidades permitidas; IDs polimórficos não substituem autorização. |
+| 2026-09-01 | Contexto e payload são JSONB objeto; conversa bruta da Bee não é armazenada. | Preservar estrutura mínima e privacidade. | Serviços expõem leitura tipada; não há prompt completo, conversa ou mensagem bruta. |
+
+| 2026-09-01 | Organizational Memory + Event Layer V1 concluiu código e Build/typecheck e entrou em `AUDIT`. | Separar conclusão técnica do gate de auditoria e staging. | Não está `READY FOR STAGING`; auditoria de Dodo é obrigatória antes da promoção. |
+
+## Entrega futura registrada
+
+**Training Compliance & Development Calendar** permanece futura e **NÃO IMPLEMENTADA**. O escopo planejado inclui catálogo obrigatório e de desenvolvimento, aplicabilidade por cargo/área/unidade, periodicidade/validade, histórico, próxima realização, calendário individual, alertas configuráveis para colaborador, gestor, RH/SSMA e facilitador, convocação, presença/conclusão, certificado, recertificação, status em dia/vencendo/agendamento necessário/vencido/não aplicável e integração futura com Bee, Organizational Reading e Impact.
