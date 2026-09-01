@@ -14,10 +14,13 @@
 | 2026-09-01 | Aprovação humana não cria nem executa Intervention automaticamente. | Evitar decisões organizacionais irreversíveis sem revisão. | O contrato registra aprovação, mas não há trigger, workflow ou action automática. |
 | 2026-09-01 | Bee será role-aware e conversas privadas não serão expostas individualmente a gestores. | Proteger privacidade e manter utilidade contextual. | Compartilhamento depende de autorização, agregação ou consentimento explícito. |
 | 2026-09-01 | Nenhuma decisão sensível será autônoma. | Risco humano, jurídico e ético. | Demissões, promoções, remuneração, disciplina e diagnósticos permanecem decisões humanas. |
+| 2026-09-01 | PR #4 está `READY FOR STAGING` após o fechamento final de QA/governança. | Os testes cross-tenant passaram a usar payloads válidos no tenant B e as assertions fail-fast foram revisadas. | A implementação continua sem merge e sem produção; o próximo gate é staging descartável autorizado. |
 
 ## Estado de governança
 
-PR #1 e PR #2: `READY FOR STAGING`.
-PR #4: `FIX/AUDIT`.
+- PR #1: `READY FOR STAGING`.
+- PR #2: `READY FOR STAGING`.
+- PR #4: `READY FOR STAGING`.
+- Bloqueio comum: execução autenticada em staging descartável ainda pendente.
 
-Nenhuma decisão deste log autoriza aplicação de migration, staging, produção ou merge.
+A implementação do PR #4 continua sem merge e sem aplicação em produção. Nenhuma decisão deste log autoriza migration, staging ou merge.
