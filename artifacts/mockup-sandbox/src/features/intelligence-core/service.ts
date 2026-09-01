@@ -10,8 +10,8 @@ async function readTable<T extends keyof TableMap>(context: IntelligenceReadCont
 const selects = {
   signals: "id,organization_id,employee_id,signal_type,signal_family,signal_nature,scope_type,scope_ref,direction,persistence,impact_level,sensitivity,window_start,window_end,context,observed_at,value,source_type,source_id,status,created_by,created_at,updated_at",
   evidence: "id,organization_id,signal_id,evidence_type,summary,payload,source_type,source_id,observed_at,relation,independence_group,created_by,created_at,updated_at",
-  recommendations: "id,organization_id,employee_id,title,rationale,status,source_evidence_ids",
-  interventions: "id,organization_id,recommendation_id,employee_id,intervention_type,title,plan,status,owner_employee_id",
+  recommendations: "id,organization_id,employee_id,title,rationale,status,source_evidence_ids,recommendation_type,scope_type,scope_ref,evidence_state,problem_statement,unknowns,recommended_intervention_type,alternatives,do_not_recommend,expected_outcome,measurement_plan,estimated_cost,currency,owner_employee_id,approval_required,approved_by,approved_at,follow_up_at,context,created_by,reviewed_by,reviewed_at,created_at,updated_at",
+  interventions: "id,organization_id,recommendation_id,employee_id,intervention_type,intervention_family,title,plan,objective,target_scope_type,target_scope_ref,success_criteria,measurement_plan,estimated_cost,currency,starts_at,expected_end_at,follow_up_at,requires_human_approval,context,status,owner_employee_id,created_by,approved_by,approved_at,created_at,updated_at",
   actions: "id,organization_id,intervention_id,action_type,title,details,status,assignee_employee_id,due_at,completed_at",
   outcomes: "id,organization_id,intervention_id,action_id,outcome_type,status,details,measured_at",
   sources: "id,organization_id,source_type,name,owner_user_id,access_level,status",
