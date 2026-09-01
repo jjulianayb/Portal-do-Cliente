@@ -100,3 +100,22 @@ export type IntelligenceDecisionRevision = {
   new_snapshot: Record<string, unknown>;
   created_at: string;
 };
+
+export type OrganizationalReadingType = "movement" | "pattern" | "anomaly" | "risk" | "opportunity" | "tension" | "gap" | "evolution";
+export type OrganizationalReadingStatus = "open" | "under_investigation" | "supported" | "dismissed" | "resolved" | "archived";
+export type OrganizationalReadingKnowledgeKind = "interpreted";
+export type OrganizationalReadingSourceType = "evidence" | "knowledge_source" | "knowledge_document" | "organizational_event" | "memory_relation";
+export type OrganizationalReadingSourceRelationship = "supports" | "contradicts" | "contextualizes" | "derived_from" | "observed_in";
+export type OrganizationalReadingHypothesisStatus = "proposed" | "under_investigation" | "supported" | "dismissed";
+export type IntelligenceOrganizationalReading = {
+  id: string; organization_id: string; reading_type: OrganizationalReadingType; scope_type: SignalScopeType; scope_ref: string; title: string; description: string; status: OrganizationalReadingStatus; knowledge_kind: OrganizationalReadingKnowledgeKind; observation_window_start: string; observation_window_end: string; detected_at: string; source_summary: string; context: Record<string, unknown>; created_at: string; updated_at: string;
+};
+export type IntelligenceOrganizationalReadingSource = {
+  id: string; organization_id: string; reading_id: string; source_type: OrganizationalReadingSourceType; evidence_id?: string | null; knowledge_source_id?: string | null; knowledge_document_id?: string | null; organizational_event_id?: string | null; memory_relation_id?: string | null; relationship_type: OrganizationalReadingSourceRelationship; provenance_note?: string | null; context: Record<string, unknown>; created_at: string;
+};
+export type IntelligenceOrganizationalReadingHypothesis = {
+  id: string; organization_id: string; reading_id: string; hypothesis_statement: string; status: OrganizationalReadingHypothesisStatus; knowledge_kind: "hypothesis"; context: Record<string, unknown>; created_by?: string | null; created_at: string; updated_at: string;
+};
+export type IntelligenceOrganizationalReadingRevision = {
+  id: string; organization_id: string; reading_id: string; revision_number: number; changed_by_user_id: string; change_reason: string; previous_snapshot: Record<string, unknown>; new_snapshot: Record<string, unknown>; created_at: string;
+};
