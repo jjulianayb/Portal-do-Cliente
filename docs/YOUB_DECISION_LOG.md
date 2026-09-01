@@ -86,7 +86,7 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 ## Evidence + Recommendation Operational V1
 
 - PR #9 permanece `READY FOR STAGING`, congelado no head `9a17bffa1a014ea33697345e54f0b558fc952bca`; não deve ser alterado salvo bug real comprovado.
-- Evidence + Recommendation Operational V1 está em `AUDIT` na branch `feature/evidence-recommendation-operational-v1`, criada exatamente do head do PR #9. Código e Build/typecheck foram concluídos; não promover para `READY FOR STAGING` antes da auditoria de Dodo.
+- Evidence + Recommendation Operational V1 está em `READY FOR STAGING` na branch `feature/evidence-recommendation-operational-v1`, após o hardening de compatibilidade do schema legado e das funções PL/pgSQL, com Build/typecheck aprovado. Isso não é `READY FOR MERGE`; SQL/RLS runtime autenticado continua pendente.
 - O contrato conecta Leitura Organizacional → Hipótese → Evidência → avaliação de suficiência → Recommendation por FKs/junctions tenant-safe e provenance explícita.
 - `insufficient`, `weak`, `moderate`, `strong` e `conflicting` não são probabilidades de causa. A ausência de evidência não é evidência negativa.
 - Recommendation é proposta e permanece distinta de Decision, Approval, Intervention, Action e Outcome. A Bee poderá explicar a cadeia futuramente, mas não deverá apresentar hipótese como fato nem Recommendation como decisão.
