@@ -98,3 +98,8 @@ Esta camada operacionaliza o trecho Leitura Organizacional → Hipótese → Evi
 Recommendations existentes recebem vínculos explícitos e tenant-safe para Reading, Assessment, Hypothesis e Evidence. `intelligence_recommendation_evidence` reaproveitado é complementado com relação `supports`/`contradicts`; não há segunda Evidence Engine. A Recommendation mantém rationale, evidence_state, unknowns, alternatives, do_not_recommend, measurement_plan, approval_required, owner, scope e context. `proposed`/`accepted` com `evidence_state = insufficient` são bloqueados.
 
 Assessments e Recommendations podem ser revisados por caminho controlado com snapshots append-only, autoria, motivo e timestamp; updates autenticados diretos foram removidos para evitar reescrita silenciosa. Memory e Event Layer recebem registros somente por serviços controlados. Não há criação automática de Decision, Intervention, Action ou Outcome.
+
+
+### Estado da entrega
+
+Evidence + Recommendation Operational V1 está em `AUDIT` após código e Build/typecheck. PR #9 permanece `READY FOR STAGING`; SQL/RLS runtime autenticado continua pendente.
