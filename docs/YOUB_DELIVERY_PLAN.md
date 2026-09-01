@@ -59,7 +59,7 @@ Entrega futura, **NÃO IMPLEMENTADA** e fora do PR #5. Escopo planejado: catálo
 
 ## Decision Engine + Wiring Core V1
 
-A nova branch `feature/decision-engine-v1` parte exatamente do head `023c07d52150955d488ae124fab4a6371b9e3eff` do PR #6, que permanece `READY FOR STAGING`. Esta entrega implementa somente o Decision Engine V1 e o wiring estrutural entre Recommendation, Decision, Approval, Intervention, Action, Outcome, Organizational Memory e Event Layer. O estado inicial é `BUILDING`; após código e Build/typecheck, seguirá para `AUDIT`. Não será promovida a `READY FOR STAGING` antes da auditoria de Dodo.
+A nova branch `feature/decision-engine-v1` parte exatamente do head `023c07d52150955d488ae124fab4a6371b9e3eff` do PR #6, que permanece `READY FOR STAGING`. Esta entrega implementa somente o Decision Engine V1 e o wiring estrutural entre Recommendation, Decision, Approval, Intervention, Action, Outcome, Organizational Memory e Event Layer. O estado inicial foi `BUILDING`; código e Build/typecheck foram concluídos e o estado atual é `AUDIT`. Não será promovida a `READY FOR STAGING` antes da auditoria de Dodo.
 
 A separação contratual é obrigatória: Recommendation é proposta; Decision registra escolha humana; Approval é autorização adicional quando exigida; Action é execução; Outcome mede resultado. `decided`/`approved` não significam `executed`.
 
