@@ -59,3 +59,13 @@ Uma Recommendation pode ter zero ou várias Decisions históricas. Uma Decision 
 Decisions podem ser representadas na Organizational Memory por serviço controlado como entidade `decision`, com relação temporal e `knowledge_kind` explícito; decisões superseded permanecem disponíveis. O Event Layer recebe somente contratos implementados controlados (`decision_created`, `decision_approved`, `decision_rejected`, `decision_deferred`, `decision_superseded`, `decision_effective`), sem captura automática.
 
 `evidence_snapshot` preserva o estado disponível no momento da decisão e não recalcula o passado. `alternatives_considered` e `unknowns` são arrays JSONB; `evidence_snapshot` e `context` são objetos JSONB. A Bee poderá preparar rascunhos, mas não autoaprovar decisões sensíveis. Organizational Reading Engine, Evidence Engine automático, Bee Runtime, LLM, UI final, scoring e automações permanecem fora do escopo.
+
+### Hardening: Decision colaborativa e versionável
+
+`intelligence_decisions` continua representando o estado corrente. Enquanto está em `draft` ou `pending_review`, admin_youb, RH e diretoria (dentro do escopo organizacional permitido) podem colaborar por uma função controlada. Cada alteração substantiva grava uma linha em `intelligence_decision_revisions`, com snapshots JSONB estruturados antes/depois, `changed_by_user_id`, motivo e sequência append-only. O `evidence_snapshot` pode mudar nesses estados somente por esse caminho.
+
+Em `pending_approval`, diretoria pode aprovar sem alteração, rejeitar, devolver para revisão ou revisar conteúdo. Uma revisão nesse estado sempre retorna a Decision para `pending_review`; portanto, não existe aprovação implícita do conteúdo alterado. A aprovação final grava `approved_by=auth.uid()` e `approved_at` e leva a decisão a `decided`; isso não executa Action.
+
+Depois de `decided` ou `effective`, o estado corrente é protegido contra update autenticado direto. Uma mudança é uma nova Decision criada pelo serviço de supersession: a nova linha contém `supersedes_decision_id` apontando para a predecessora, e a predecessora muda para `superseded`. A predecessora não aponta para frente e nenhuma das duas é apagada.
+
+Os contratos controlados `decision_revised` e `decision_returned_for_review`, além de `decision_approved`, foram adicionados ao Event Layer. Eles não são emitidos por triggers automáticos. Não são armazenadas conversa bruta, prompt completo ou chain-of-thought.
