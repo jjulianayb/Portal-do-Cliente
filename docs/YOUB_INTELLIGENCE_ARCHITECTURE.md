@@ -83,3 +83,8 @@ A junction `intelligence_organizational_reading_sources` referencia, com FKs com
 Leituras podem ser registradas explicitamente na Organizational Memory como entidade `reading` e `knowledge_kind = interpreted`. O Event Layer recebe contratos controlados `organizational_reading_created`, `organizational_reading_updated`, `organizational_reading_supported` e `organizational_reading_dismissed`; nenhum trigger faz projeção automática.
 
 Para preservar histórico, o estado corrente pode ser revisado pelo caminho controlado em `open`/`under_investigation`, com `intelligence_organizational_reading_revisions` append-only. A suíte e o contrato não armazenam conversa bruta, prompt completo ou chain-of-thought. Não há geração automática de evidência, scoring, ranking, ML, LLM, diagnóstico ou criação de Recommendation/Decision/Intervention/Action.
+
+
+### Estado da entrega
+
+O Organizational Reading Engine V1 está em `AUDIT` após código e Build/typecheck. PR #8 permanece `READY FOR STAGING`.
