@@ -32,3 +32,20 @@ O PR #4 cria somente a fundação estrutural de Recommendation & Intervention V1
 - **OUTPUT ≠ OUTCOME ≠ IMPACT**: uma saída da Bee, um resultado observado e um impacto organizacional são conceitos distintos.
 - Associação não é causalidade. `claim_strength` é declarado, não inferido, e `causal_validated` exige validação explícita.
 - ROI nunca é presumido; valores financeiros, quando existentes, são registrados com moeda e metodologia.
+
+
+## Organizational Memory + Event Layer V1
+
+A branch `feature/organizational-memory-event-layer-v1` adiciona uma camada estruturada e temporal sobre PostgreSQL. Ela não usa graph database, não implementa event sourcing completo, replay da aplicação, Kafka/queue ou captura automática por triggers. As tabelas operacionais existentes continuam sendo a fonte de estado atual; eventos representam ocorrências registradas.
+
+### Memória temporal
+
+`organizational_memory_relations` conecta entidades por relação temporal com `organization_id`, tipos e IDs de origem/destino, relação, `knowledge_kind`, intervalo de validade, origem, sensibilidade e contexto JSONB objeto. Os tipos epistemológicos distinguem `fact`, `declaration`, `reading`, `hypothesis`, `decision`, `intervention` e `outcome`; hipótese não é fato e não é promovida implicitamente. Mudanças históricas encerram a relação anterior com `valid_until` e inserem uma nova relação, preservando a história. IDs polimórficos são referências descritivas sem FK falsa e nunca autorizam acesso.
+
+### Event layer
+
+`organizational_events` é append-oriented e registra `event_type`, entidade, ocorrência, registro, origem, ator, sensibilidade, payload JSONB objeto e correlação. Seu vocabulário é mantido em catálogo controlado: tipos arbitrários são rejeitados e novas extensões exigem mudança explícita no catálogo. O contrato inclui eventos de pessoas, feedback, check-in, PDI, assessment, aprendizagem, leitura, recomendação, decisão, intervenção, ação e outcome, além de contratos futuros de treinamento (`training_assigned`, `training_scheduled`, `training_completed`, `training_expiring`, `training_expired`, `recertification_scheduled`) marcados como não implementados. Não há replay, substituição de estado ou automação global. Conversa bruta da Bee não é armazenada.
+
+### Segurança
+
+RLS é tenant-safe: `admin_youb` e `rh` gerenciam memória no próprio tenant e registram eventos; diretoria lê somente conteúdo organizacional dentro das sensibilidades permitidas; gestor e colaborador não recebem leitura genérica. `standard`, `restricted` e `highly_sensitive` são vocabulários controlados. O contrato de leitura TypeScript é read-only para relações e eventos.
