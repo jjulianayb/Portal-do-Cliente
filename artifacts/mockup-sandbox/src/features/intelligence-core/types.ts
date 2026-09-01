@@ -1,0 +1,24 @@
+import type { SupabaseSession } from "../../lib/supabase";
+
+export type IntelligenceStatus = "observed" | "investigating" | "corroborated" | "dismissed" | "resolved" | "draft" | "proposed" | "accepted" | "rejected" | "expired" | "approved" | "in_progress" | "completed" | "cancelled" | "confirmed";
+export type KnowledgeAccessLevel = "organization" | "management" | "restricted";
+export type KnowledgeDocumentStatus = "draft" | "published" | "archived";
+export type SignalFamily = "performance" | "development" | "leadership" | "experience" | "talent" | "work" | "knowledge" | "organization";
+export type SignalNature = "risk" | "opportunity" | "change" | "anomaly";
+export type SignalScopeType = "employee" | "team" | "area" | "position" | "process" | "unit" | "organization";
+export type SignalDirection = "improving" | "deteriorating" | "anomalous" | "mixed" | "neutral";
+export type SignalPersistence = "isolated" | "recurring" | "trend";
+export type SignalImpactLevel = "low" | "moderate" | "high" | "critical";
+export type SignalSensitivity = "standard" | "restricted" | "highly_sensitive";
+export type SignalStatus = "observed" | "investigating" | "corroborated" | "dismissed" | "resolved";
+export type EvidenceType = "quantitative" | "qualitative" | "behavioral" | "operational" | "business" | "documented";
+export type EvidenceRelation = "supports" | "contradicts" | "neutral";
+export type IntelligenceReadContext = { session: SupabaseSession; organizationId: string; employeeId?: string | null };
+export type IntelligenceSignal = { id: string; organization_id: string; employee_id?: string | null; signal_type: string; signal_family?: SignalFamily | null; signal_nature?: SignalNature | null; scope_type?: SignalScopeType | null; scope_ref?: string | null; direction?: SignalDirection | null; persistence?: SignalPersistence | null; impact_level?: SignalImpactLevel | null; sensitivity?: SignalSensitivity | null; window_start?: string | null; window_end?: string | null; context: Record<string, unknown>; observed_at: string; value: Record<string, unknown>; source_type: string; source_id?: string | null; status: SignalStatus; created_by?: string | null; created_at: string; updated_at: string; };
+export type IntelligenceEvidence = { id: string; organization_id: string; signal_id?: string | null; evidence_type: EvidenceType; summary: string; payload: Record<string, unknown>; source_type: string; source_id?: string | null; observed_at?: string | null; relation: EvidenceRelation; independence_group?: string | null; created_by?: string | null; created_at: string; updated_at: string; };
+export type IntelligenceRecommendation = { id: string; organization_id: string; employee_id?: string | null; title: string; rationale?: string | null; status: IntelligenceStatus; source_evidence_ids: string[]; };
+export type IntelligenceIntervention = { id: string; organization_id: string; recommendation_id?: string | null; employee_id?: string | null; intervention_type: string; title: string; plan: Record<string, unknown>; status: IntelligenceStatus; owner_employee_id?: string | null; };
+export type IntelligenceAction = { id: string; organization_id: string; intervention_id?: string | null; action_type: string; title: string; details: Record<string, unknown>; status: IntelligenceStatus; assignee_employee_id?: string | null; due_at?: string | null; completed_at?: string | null; };
+export type IntelligenceOutcome = { id: string; organization_id: string; intervention_id?: string | null; action_id?: string | null; outcome_type: string; status: IntelligenceStatus; details: Record<string, unknown>; measured_at: string; };
+export type KnowledgeSource = { id: string; organization_id: string; source_type: string; name: string; owner_user_id?: string | null; access_level: KnowledgeAccessLevel; status: "active" | "archived"; };
+export type KnowledgeDocument = { id: string; organization_id: string; knowledge_source_id?: string | null; document_type: string; title: string; version: string; status: KnowledgeDocumentStatus; valid_from?: string | null; valid_until?: string | null; content?: string | null; storage_path?: string | null; access_level: KnowledgeAccessLevel; owner_user_id?: string | null; };
