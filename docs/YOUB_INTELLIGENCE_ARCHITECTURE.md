@@ -20,3 +20,15 @@ A cadeia separa observação, interpretação, hipótese, evidência, recomenda�
 ## Escopo do PR #4
 
 O PR #4 cria somente a fundação estrutural de Recommendation & Intervention V1: campos, constraints, relações, políticas conservadoras, contratos de leitura e testes. Não implementa LLM, scoring, ranking, matching, Decision Engine, Bee Actions, Impact, Memory ou Event Layer.
+
+
+## Bee Action Authorization + Impact Model V1
+
+- A capacidade da Bee (`observe`, `explain`, `ask`, `recommend`, `prepare`, `execute`) é diferente da autorização para agir.
+- Acesso ao dado é diferente de permissão para agir; RLS continua sendo a autoridade.
+- Aprovação humana é um registro de autorização, não execução. A camada não dispara executor, trigger, RPC ou webhook.
+- Conversa privada não vira relatório escondido: `bee_action_requests` armazena metadados e payload mínimo, nunca conversa bruta, prompt completo ou mensagem privada.
+- `intelligence_actions` continua representando a ação organizacional concreta; `bee_action_requests` representa solicitação, autorização e auditoria.
+- **OUTPUT ≠ OUTCOME ≠ IMPACT**: uma saída da Bee, um resultado observado e um impacto organizacional são conceitos distintos.
+- Associação não é causalidade. `claim_strength` é declarado, não inferido, e `causal_validated` exige validação explícita.
+- ROI nunca é presumido; valores financeiros, quando existentes, são registrados com moeda e metodologia.
