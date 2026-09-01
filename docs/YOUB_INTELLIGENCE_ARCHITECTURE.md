@@ -102,4 +102,9 @@ Assessments e Recommendations podem ser revisados por caminho controlado com sna
 
 ### Estado da entrega
 
-Evidence + Recommendation Operational V1 está em `AUDIT` após código e Build/typecheck. PR #9 permanece `READY FOR STAGING`; SQL/RLS runtime autenticado continua pendente.
+Evidence + Recommendation Operational V1 está em `READY FOR STAGING` após os dois hardenings auditados e Build/typecheck aprovado. Isso não é `READY FOR MERGE`; PR #9 permanece `READY FOR STAGING`; SQL/RLS runtime autenticado continua pendente.
+
+
+### Compatibilidade da Recommendation Evidence
+
+A relação histórica `intelligence_recommendation_evidence` preserva a identidade composta `organization_id + recommendation_id + evidence_id` e não possui coluna sintética `id`. `evidence_relation` e `context` foram adicionados aditivamente. Portanto, a mesma Evidence não pode simultaneamente ser `supports` e `contradicts` na mesma Recommendation; essa exclusividade é intencional e coberta pela suíte. Types e service usam a identidade composta real.
