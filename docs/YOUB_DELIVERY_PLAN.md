@@ -79,9 +79,9 @@ A cadeia epistemológica permanece: DADOS → CONTEXTO → LEITURAS ORGANIZACION
 
 A fundação usa taxonomia e lifecycle controlados, janelas de observação, provenance para múltiplas fontes existentes e integração explícita com Memory/Event Layer. Não há geração automática de evidências, scoring, ranking, machine learning, LLM, diagnóstico ou criação automática de Recommendation, Decision, Intervention ou Action.
 
-## Evidence + Recommendation Operational V1 — AUDIT
+## Evidence + Recommendation Operational V1 — READY FOR STAGING
 
-A nova branch `feature/evidence-recommendation-operational-v1` parte exatamente do head `9a17bffa1a014ea33697345e54f0b558fc952bca` do PR #9, que permanece `READY FOR STAGING`. Esta entrega implementa somente a fundação operacional e de provenance entre Leitura Organizacional, Hipótese, Evidência, avaliação de suficiência e Recommendation. Código e Build/typecheck foram concluídos e o estado atual é `AUDIT`; não promover para `READY FOR STAGING` antes da auditoria de Dodo.
+A nova branch `feature/evidence-recommendation-operational-v1` parte exatamente do head `9a17bffa1a014ea33697345e54f0b558fc952bca` do PR #9, que permanece `READY FOR STAGING`. Esta entrega implementa somente a fundação operacional e de provenance entre Leitura Organizacional, Hipótese, Evidência, avaliação de suficiência e Recommendation. Os dois hardenings auditados foram concluídos e o Build/typecheck passou; o estado atual é `READY FOR STAGING`. Isso não é `READY FOR MERGE`; a execução SQL/RLS autenticada em staging continua pendente.
 
 A avaliação registra evidências que sustentam e contradizem, unknowns, limitations, resumo e `evidence_state`, sem transformar contagens em verdade ou probabilidade de causa. `insufficient` não pode promover Recommendation para `proposed`/`accepted`; `weak` pode sustentar apenas uma Recommendation cautelosa com limitações explícitas.
 
