@@ -32,7 +32,7 @@ const selects = {
   recommendationReadings: "id,organization_id,recommendation_id,reading_id,relationship_type,context,created_at",
   recommendationAssessments: "id,organization_id,recommendation_id,assessment_id,relationship_type,context,created_at",
   recommendationHypotheses: "id,organization_id,recommendation_id,hypothesis_id,relationship_type,context,created_at",
-  recommendationEvidence: "id,organization_id,recommendation_id,evidence_id,evidence_relation,context,created_at",
+  recommendationEvidence: "organization_id,recommendation_id,evidence_id,evidence_relation,context,created_at",
   recommendationRevisions: "id,organization_id,recommendation_id,revision_number,changed_by_user_id,change_reason,previous_snapshot,new_snapshot,created_at",
 } as const;
 export const readSignals = (context: IntelligenceReadContext) => readTable(context, "intelligence_signals", selects.signals, context.employeeId ? `&employee_id=eq.${encode(context.employeeId)}` : "");
