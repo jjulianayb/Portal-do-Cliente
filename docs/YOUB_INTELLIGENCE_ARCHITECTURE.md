@@ -49,3 +49,13 @@ A branch `feature/organizational-memory-event-layer-v1` adiciona uma camada estr
 ### Segurança
 
 RLS é tenant-safe: `admin_youb` e `rh` gerenciam memória no próprio tenant e registram eventos; diretoria lê somente conteúdo organizacional dentro das sensibilidades permitidas; gestor e colaborador não recebem leitura genérica. `standard`, `restricted` e `highly_sensitive` são vocabulários controlados. O contrato de leitura TypeScript é read-only para relações e eventos.
+
+## Decision Engine + Wiring Core V1
+
+O Decision Engine V1 adiciona `intelligence_decisions` como registro tenant-safe de escolha humana. A arquitetura preserva a cadeia: Recommendation (proposta) → Decision (escolha) → Approval (autorização adicional, quando exigida) → Intervention (plano explícito) → Action (execução) → Outcome (medição). Nenhuma etapa gera a seguinte por trigger ou automação.
+
+Uma Recommendation pode ter zero ou várias Decisions históricas. Uma Decision pode ter zero ou várias intervenções por meio de `intelligence_decision_interventions`, com vínculo explícito `derived_from_decision` e FKs compostas tenant-safe. Interventions, Actions e Outcomes continuam usando as tabelas existentes; não há duplicação de estado operacional.
+
+Decisions podem ser representadas na Organizational Memory por serviço controlado como entidade `decision`, com relação temporal e `knowledge_kind` explícito; decisões superseded permanecem disponíveis. O Event Layer recebe somente contratos implementados controlados (`decision_created`, `decision_approved`, `decision_rejected`, `decision_deferred`, `decision_superseded`, `decision_effective`), sem captura automática.
+
+`evidence_snapshot` preserva o estado disponível no momento da decisão e não recalcula o passado. `alternatives_considered` e `unknowns` são arrays JSONB; `evidence_snapshot` e `context` são objetos JSONB. A Bee poderá preparar rascunhos, mas não autoaprovar decisões sensíveis. Organizational Reading Engine, Evidence Engine automático, Bee Runtime, LLM, UI final, scoring e automações permanecem fora do escopo.
