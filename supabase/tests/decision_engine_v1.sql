@@ -69,6 +69,7 @@ insert into public.intelligence_decisions(
  ((select value from ctx where key='decision_org_b'),(select value from ctx where key='org_b'),'maintain','organization',(select value from ctx where key='org_b'),(select value from ctx where key='recommendation_b'),'Maintain organization B','[]','Fixture for tenant-safe probes.','{"available":[]}','[]','informational',false,'draft',null,(select value from ctx where key='user_1'),false,'{"source":"fixture"}');
 select pg_temp.assert_true('multiple Decisions for one Recommendation remain preserved',(select count(*) from public.intelligence_decisions where recommendation_id=(select value from ctx where key='recommendation_a'))=6);
 select pg_temp.assert_true('superseded decision keeps historical predecessor',(select supersedes_decision_id from public.intelligence_decisions where id=(select value from ctx where key='decision_superseded'))=(select value from ctx where key='decision_a'));
+select pg_temp.assert_true('evidence snapshot is preserved',(select evidence_snapshot->>'captured_at' from public.intelligence_decisions where id=(select value from ctx where key='decision_a'))='2026-01-02T00:00:00Z');
 
 create or replace function pg_temp.invalid_decision_vocab() returns boolean language plpgsql security invoker as $$ begin begin
   insert into public.intelligence_decisions(organization_id,decision_type,scope_type,scope_ref,decision_statement,alternatives_considered,evidence_snapshot,unknowns,risk_level,status,context)
