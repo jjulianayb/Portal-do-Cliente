@@ -89,7 +89,7 @@ create or replace function pg_temp.training_event_rejected(candidate text) retur
     insert into public.organizational_events(organization_id,event_type,entity_type,entity_id,occurred_at,source_type,actor_user_id,sensitivity,payload)
     values((select value from ctx where key='org_a'),candidate,'employee',(select value from ctx where key='employee_a'),'2026-05-01','manual',(select value from ctx where key='user_5'),'standard','{}');
     return false;
-  exception when others then return true;
+  exception when others then get stacked diagnostics msg=message_text; return msg ilike '%foreign key%' or msg ilike '%check constraint%';
   end;
 end; $$;
 create or replace function pg_temp.rh_memory_insert_and_close() returns boolean language plpgsql security invoker as $$ declare relation_id uuid := '11111111-0000-0000-0000-000000000040'; begin
