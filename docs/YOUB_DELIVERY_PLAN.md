@@ -17,11 +17,11 @@
 | PR #1 — fundação multiempresa/RLS | READY FOR STAGING | Zapia / Dodo | staging descartável autorizado | assim que o staging descartável autorizado estiver disponível |
 | PR #2 — Intelligence Core | READY FOR STAGING | Zapia / Dodo | PR #1; staging descartável autorizado | assim que o staging descartável autorizado estiver disponível |
 | PR #4 — Recommendation & Intervention Model V1 | READY FOR STAGING | Zapia / Dodo | PR #2; auditoria fail-fast concluída | assim que o staging descartável autorizado estiver disponível |
-| Bee Actions + Impact Foundation V1 | BUILDING | Zapia / Dodo | PR #4; contrato de autorização e Impact Model V1 | 02/09/2026 |
+| Bee Actions + Impact Foundation V1 | AUDIT | Zapia / Dodo | PR #4; contrato de autorização e Impact Model V1 | 02/09/2026 |
 
 **Fechamento PR #4:** `READY FOR STAGING`; head congelado em `311c6d3028fc3685c6479810e497db58b2695023`.
 
-**Nova entrega:** Bee Actions + Impact Foundation V1 está em `BUILDING` nesta branch. Após o código, o estado será `AUDIT`; não será promovido para `READY FOR STAGING` antes da auditoria de Dodo.
+**Nova entrega:** Bee Actions + Impact Foundation V1 está em `AUDIT` nesta branch após a implementação estrutural. A entrega não será promovida para `READY FOR STAGING` antes da auditoria de Dodo.
 
 ## Bloqueio comum
 
@@ -35,7 +35,7 @@
 | Decision Engine + wiring das jornadas | 04/09/2026 |
 | Integração / regressão / readiness | 05/09/2026 |
 
-A fundação Bee Actions + Impact V1 tem prazo-alvo de 02/09/2026 e está registrada acima como `BUILDING`. As demais entregas são planejamento futuro e não são implementadas nesta branch.
+A fundação Bee Actions + Impact V1 tem prazo-alvo de 02/09/2026 e está registrada acima como `AUDIT`, aguardando auditoria de Dodo. As demais entregas são planejamento futuro e não são implementadas nesta branch.
 
 ## Gate de qualidade
 
