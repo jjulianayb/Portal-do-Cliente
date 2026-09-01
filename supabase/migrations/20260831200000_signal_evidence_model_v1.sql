@@ -14,6 +14,7 @@ alter table public.intelligence_signals
   add column if not exists window_end date,
   add column if not exists context jsonb not null default '{}'::jsonb;
 
+alter table public.intelligence_signals drop constraint if exists intelligence_signals_status_check;
 update public.intelligence_signals
 set status = case status when 'received' then 'observed' when 'reviewed' then 'corroborated' when 'archived' then 'dismissed' else status end
 where status in ('received','reviewed','archived');
@@ -81,4 +82,3 @@ comment on table public.intelligence_signals is 'DADO → SINAL → PADRÃO → 
 comment on table public.intelligence_evidence is 'Evidence may support, contradict or contextualize a signal. V1 has no strength or confidence calculation.';
 comment on column public.intelligence_signals.scope_ref is 'Descriptive target reference only; never an authorization mechanism.';
 comment on column public.intelligence_evidence.independence_group is 'Optional provenance grouping for future independence analysis; no weights are applied in V1.';
-
