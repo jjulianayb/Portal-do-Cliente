@@ -84,7 +84,7 @@ select pg_temp.assert_true('event activation witness CHECK exists',exists(select
 select pg_temp.assert_true('event activation witness composite FK exists',exists(select 1 from pg_constraint where conrelid='public.organizational_events'::regclass and conname='organizational_events_event_type_implemented_fkey'));
 
 -- Authorized writer probes use valid entity, source, payload and tenant data.
-create or replace function pg_temp.training_event_rejected(candidate text) returns boolean language plpgsql security invoker as $$ begin
+create or replace function pg_temp.training_event_rejected(candidate text) returns boolean language plpgsql security invoker as $$ declare msg text; begin
   begin
     insert into public.organizational_events(organization_id,event_type,entity_type,entity_id,occurred_at,source_type,actor_user_id,sensitivity,payload)
     values((select value from ctx where key='org_a'),candidate,'employee',(select value from ctx where key='employee_a'),'2026-05-01','manual',(select value from ctx where key='user_5'),'standard','{}');
