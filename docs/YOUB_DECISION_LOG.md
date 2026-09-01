@@ -24,3 +24,15 @@
 - Bloqueio comum: execução autenticada em staging descartável ainda pendente.
 
 A implementação do PR #4 continua sem merge e sem aplicação em produção. Nenhuma decisão deste log autoriza migration, staging ou merge.
+
+
+| 2026-09-01 | Bee Action Request é uma camada distinta de `intelligence_actions`. | Separar capacidade, solicitação, autorização e execução concreta sem duplicar a ação organizacional. | `bee_action_requests` registra metadados mínimos, referências tenant-safe e estados; não executa ações. |
+| 2026-09-01 | Acesso ao dado não equivale a permissão para agir. | Leitura contextual e ação mediada têm riscos diferentes. | RLS e constraints conservadoras separam leitura, confirmação, aprovação e execução. |
+| 2026-09-01 | Aprovação humana não é execução. | Evitar automação de decisões e efeitos irreversíveis. | Aprovação apenas habilita o contrato estrutural; não há trigger, RPC, webhook ou executor. |
+| 2026-09-01 | `OUTPUT`, `OUTCOME` e `IMPACT` são conceitos distintos. | Evitar atribuir impacto a uma saída ou a uma associação. | Outcomes recebem níveis e força de afirmação explícitos, sem causalidade ou ROI automático. |
+| 2026-09-01 | Associação não é causalidade; ROI nunca é presumido. | Guardar incerteza e evitar claims financeiros indevidos. | `causal_validated` exige validação e metodologia; `financial_value` exige moeda e metodologia. |
+| 2026-09-01 | Conversa privada da Bee não vira relatório escondido. | Preservar privacidade e limitar o registro ao necessário. | A tabela de requests armazena metadados e payload mínimo, sem conversa bruta ou prompt completo. |
+
+## Estado da nova entrega
+
+Bee Actions + Impact Foundation V1: `BUILDING` durante implementação; após o código, será `AUDIT` e aguardará auditoria de Dodo.
