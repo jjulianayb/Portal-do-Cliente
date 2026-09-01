@@ -10,25 +10,34 @@
 
 `BACKLOG → SPEC READY → BUILDING → AUDIT → FIX → BLOCKED → READY FOR STAGING → READY FOR MERGE → DONE`
 
-Os estados não são necessariamente lineares: uma auditoria pode retornar o item para `FIX` ou `BLOCKED`.
-
 ## Entregas atuais
 
-| Entrega | Estado | Responsável principal | Dependências | Prazo-alvo |
+| Entrega | Estado | Responsável | Dependências | Prazo-alvo / gate |
 |---|---|---|---|---|
-| PR #1 — fundação multiempresa/RLS | READY FOR STAGING | Zapia / Dodo | revisão de staging autorizada | a definir |
-| PR #2 — Intelligence Core | READY FOR STAGING | Zapia / Dodo | PR #1; execução autenticada em staging | a definir |
-| PR #4 — Recommendation & Intervention Model V1 | FIX/AUDIT | Zapia / Dodo | PR #2; restauração da suíte base; auditoria fail-fast | a definir |
+| PR #1 — fundação multiempresa/RLS | READY FOR STAGING | Zapia / Dodo | staging descartável autorizado | assim que o staging descartável autorizado estiver disponível |
+| PR #2 — Intelligence Core | READY FOR STAGING | Zapia / Dodo | PR #1; staging descartável autorizado | assim que o staging descartável autorizado estiver disponível |
+| PR #4 — Recommendation & Intervention Model V1 | READY FOR STAGING | Zapia / Dodo | PR #2; auditoria fail-fast concluída | assim que o staging descartável autorizado estiver disponível |
 
-## Próximas entregas — ainda não implementadas
+**Fechamento:** PR #4 foi promovido para `READY FOR STAGING` após o commit final desta auditoria; o head final está registrado no relatório de fechamento e no histórico da branch.
 
-1. **Bee Actions + Impact** — contratos para ações, resultados e impacto, sem afirmar implementação neste PR.
-2. **Organizational Memory + Event Layer** — memória organizacional e eventos rastreáveis, sem afirmar implementação neste PR.
-3. **Decision Engine** — camada futura para decisões explicáveis e aprovadas humanamente, sem afirmar implementação neste PR.
+## Bloqueio comum
+
+- **Execução autenticada em staging descartável ainda pendente.** O gate é a disponibilidade de staging descartável autorizado; nenhum horário é inventado.
+
+## Próximas entregas — ainda não implementadas neste PR
+
+| Entrega | Prazo-alvo operacional |
+|---|---|
+| Bee Actions + Impact Foundation | 02/09/2026 |
+| Organizational Memory + Event Layer | 03/09/2026 |
+| Decision Engine + wiring das jornadas | 04/09/2026 |
+| Integração / regressão / readiness | 05/09/2026 |
+
+Essas entregas são planejamento futuro. Não há implementação de Bee Actions, Impact, Memory ou Decision Engine no PR #4.
 
 ## Gate de qualidade
 
 - Nenhuma migration será aplicada em staging ou produção sem autorização explícita.
 - Nenhum merge automático.
-- O PR #4 só avança após diff da suíte base vazio, fail-fast revisado, Actions/build/typecheck verificados e validação autenticada autorizada.
-- Não implementar Bee Actions, Impact, Memory ou Decision Engine no PR #4.
+- PR #1, PR #2 e PR #4 aguardam execução autenticada assim que o staging descartável autorizado estiver disponível.
+- O PR #4 permanece limitado à fundação estrutural de Recommendation & Intervention V1.
