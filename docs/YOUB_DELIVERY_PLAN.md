@@ -29,7 +29,7 @@ As etapas abaixo são planejamento futuro. Não estão implementadas nesta branc
 
 | Próxima entrega | Prazo-alvo / gate |
 |---|---|
-| Organizational Memory + Event Layer V1 | **AUDIT** | Zapia / Dodo | código/build concluídos; contrato PostgreSQL aditivo; PR empilhado sobre Bee Actions + Impact | auditoria de Dodo pendente; nunca READY FOR STAGING antes da auditoria |
+| Organizational Memory + Event Layer V1 | **READY FOR STAGING** | Zapia / Dodo | correção mínima da suíte concluída; contrato PostgreSQL aditivo; PR empilhado sobre Bee Actions + Impact | auditoria técnica fechada; staging autenticado pendente; não é READY FOR MERGE |
 | Training Compliance & Development Calendar | Futuro; não implementado |
 | Decision Engine + wiring core | 04/09/2026 |
 | Organizational Reading Engine V1 | 05/09/2026 |
@@ -51,7 +51,7 @@ As etapas abaixo são planejamento futuro. Não estão implementadas nesta branc
 
 ## Organizational Memory + Event Layer V1
 
-A nova branch `feature/organizational-memory-event-layer-v1` parte exatamente do head congelado `f8670a512b14d55e82bde213bf2e4f6de4c4a96a` e implementa somente a camada de memória organizacional temporal e o event layer leve. O estado inicial foi `BUILDING`; código e build foram concluídos e o estado atual é `AUDIT`. Não está `READY FOR STAGING` e não será promovida antes da auditoria de Dodo. O escopo não usa graph database, não implementa event sourcing completo, replay, Kafka/queue ou automação de triggers; PostgreSQL permanece a base.
+A nova branch `feature/organizational-memory-event-layer-v1` parte exatamente do head congelado `f8670a512b14d55e82bde213bf2e4f6de4c4a96a` e implementa somente a camada de memória organizacional temporal e o event layer leve. O estado inicial foi `BUILDING`; código, build/typecheck e correção final da suíte foram concluídos e o estado atual é `READY FOR STAGING`. A execução SQL autenticada em staging continua pendente; `READY FOR STAGING` não é `READY FOR MERGE`. O escopo não usa graph database, não implementa event sourcing completo, replay, Kafka/queue ou automação de triggers; PostgreSQL permanece a base.
 
 ## Entrega futura — Training Compliance & Development Calendar
 
