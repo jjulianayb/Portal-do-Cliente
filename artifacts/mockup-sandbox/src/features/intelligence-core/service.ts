@@ -8,8 +8,8 @@ function requireConfig(): { url: string; key: string } { if (!supabaseUrl || !su
 function encode(value: string): string { return encodeURIComponent(value); }
 async function readTable<T extends keyof TableMap>(context: IntelligenceReadContext, table: T, select: string, extra = ""): Promise<TableMap[T][]> { const config = requireConfig(); const query = `select=${encode(select)}&organization_id=eq.${encode(context.organizationId)}${extra}`; const response = await fetch(`${config.url}/rest/v1/${table}?${query}`, { headers: { apikey: config.key, Authorization: `Bearer ${context.session.access_token}` } }); const body: unknown = await response.json().catch(() => null); if (!response.ok) throw new Error("Não foi possível carregar este conteúdo agora."); return (body ?? []) as TableMap[T][]; }
 const selects = {
-  signals: "id,organization_id,employee_id,signal_type,observed_at,value,source_type,source_id,status",
-  evidence: "id,organization_id,signal_id,evidence_type,summary,payload,source_type,source_id,observed_at",
+  signals: "id,organization_id,employee_id,signal_type,signal_family,signal_nature,scope_type,scope_ref,direction,persistence,impact_level,sensitivity,window_start,window_end,context,observed_at,value,source_type,source_id,status",
+  evidence: "id,organization_id,signal_id,evidence_type,summary,payload,source_type,source_id,observed_at,relation,independence_group",
   recommendations: "id,organization_id,employee_id,title,rationale,status,source_evidence_ids",
   interventions: "id,organization_id,recommendation_id,employee_id,intervention_type,title,plan,status,owner_employee_id",
   actions: "id,organization_id,intervention_id,action_type,title,details,status,assignee_employee_id,due_at,completed_at",
