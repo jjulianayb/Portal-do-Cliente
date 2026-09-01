@@ -71,9 +71,9 @@ O Decision Engine V1 passa a tratar Decision como objeto colaborativo e version�
 
 Atualizações diretas autenticadas foram removidas. Após `decided` ou `effective`, o conteúdo corrente e o `evidence_snapshot` não podem ser reescritos silenciosamente. Mudanças posteriores usam uma nova Decision: a sucessora referencia a predecessora em `supersedes_decision_id`, enquanto a predecessora passa a `superseded`; ambas permanecem históricas.
 
-## Organizational Reading Engine V1 — AUDIT
+## Organizational Reading Engine V1 — READY FOR STAGING
 
-A nova branch `feature/organizational-reading-engine-v1` parte exatamente do head `7a099b4353eb23109215f6ee7cb8e7a24e38750b` do PR #8, que permanece `READY FOR STAGING`. Esta entrega implementa somente a fundação estrutural e de provenance da **Leitura Organizacional**. Código e Build/typecheck foram concluídos e o estado atual é `AUDIT`; não será promovida a `READY FOR STAGING` antes da auditoria correspondente.
+A nova branch `feature/organizational-reading-engine-v1` parte exatamente do head `7a099b4353eb23109215f6ee7cb8e7a24e38750b` do PR #8, que permanece `READY FOR STAGING`. Esta entrega implementa somente a fundação estrutural e de provenance da **Leitura Organizacional**. O hardening final da suíte e o Build/typecheck foram concluídos e o estado atual é `READY FOR STAGING`. Isso não significa `READY FOR MERGE`; a execução SQL/RLS autenticada em staging continua pendente.
 
 A cadeia epistemológica permanece: DADOS → CONTEXTO → LEITURAS ORGANIZACIONAIS → PADRÕES → HIPÓTESES → EVIDÊNCIAS → RECOMENDAÇÕES → DECISÕES → INTERVENÇÕES → AÇÕES → IMPACTO → MEMÓRIA ORGANIZACIONAL. Uma Leitura descreve uma interpretação estruturada do que a organização apresenta; uma Hipótese é uma explicação possível e não causa confirmada.
 
