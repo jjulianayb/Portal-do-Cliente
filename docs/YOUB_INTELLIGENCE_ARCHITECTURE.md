@@ -69,3 +69,22 @@ Em `pending_approval`, diretoria pode aprovar sem alteração, rejeitar, devolve
 Depois de `decided` ou `effective`, o estado corrente é protegido contra update autenticado direto. Uma mudança é uma nova Decision criada pelo serviço de supersession: a nova linha contém `supersedes_decision_id` apontando para a predecessora, e a predecessora muda para `superseded`. A predecessora não aponta para frente e nenhuma das duas é apagada.
 
 Os contratos controlados `decision_revised` e `decision_returned_for_review`, além de `decision_approved`, foram adicionados ao Event Layer. Eles não são emitidos por triggers automáticos. Não são armazenadas conversa bruta, prompt completo ou chain-of-thought.
+
+## Organizational Reading Engine V1 — Leitura Organizacional
+
+A arquitetura expõe **Leitura Organizacional** como a camada entre Contexto e Padrões. A cadeia é: DADOS → CONTEXTO → LEITURAS ORGANIZACIONAIS → PADRÕES → HIPÓTESES → EVIDÊNCIAS → RECOMENDAÇÕES → DECISÕES → INTERVENÇÕES → AÇÕES → IMPACTO → MEMÓRIA ORGANIZACIONAL. O nome técnico legado `intelligence_signals` pode permanecer internamente sem transformar Signal no conceito de produto.
+
+`intelligence_organizational_readings` registra uma interpretação estruturada tenant-safe com tipo controlado (`movement`, `pattern`, `anomaly`, `risk`, `opportunity`, `tension`, `gap`, `evolution`), escopo compartilhado, janela de observação, detecção, resumo de fonte e contexto. Em V1, `knowledge_kind` é obrigatoriamente `interpreted`: a Reading não é automaticamente fato, declaração, observação confirmada ou causa.
+
+Reading e Hypothesis não são a mesma coisa. Reading descreve o que a organização apresenta; Hypothesis (`knowledge_kind = hypothesis`) registra uma explicação possível sobre por que isso ocorre. `supported` em uma hipótese não equivale a causalidade confirmada; Evidence Engine posterior continua necessário.
+
+A junction `intelligence_organizational_reading_sources` referencia, com FKs compostas tenant-safe, múltiplas fontes existentes: `intelligence_evidence`, `knowledge_sources`, `knowledge_documents`, `organizational_events` e relações de memória. Não duplica o Evidence Engine. Cada vínculo declara seu tipo de relação e provenance.
+
+Leituras podem ser registradas explicitamente na Organizational Memory como entidade `reading` e `knowledge_kind = interpreted`. O Event Layer recebe contratos controlados `organizational_reading_created`, `organizational_reading_updated`, `organizational_reading_supported` e `organizational_reading_dismissed`; nenhum trigger faz projeção automática.
+
+Para preservar histórico, o estado corrente pode ser revisado pelo caminho controlado em `open`/`under_investigation`, com `intelligence_organizational_reading_revisions` append-only. A suíte e o contrato não armazenam conversa bruta, prompt completo ou chain-of-thought. Não há geração automática de evidência, scoring, ranking, ML, LLM, diagnóstico ou criação de Recommendation/Decision/Intervention/Action.
+
+
+### Estado da entrega
+
+O Organizational Reading Engine V1 está em `READY FOR STAGING` após o hardening final da suíte e o Build/typecheck. Isso não é `READY FOR MERGE`; a execução SQL/RLS autenticada em staging continua pendente. PR #8 permanece `READY FOR STAGING`.
