@@ -38,7 +38,21 @@ A implementação continua sem merge e sem aplicação em produção. Nenhuma de
 
 ## Estado da nova entrega
 
+- Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f8670a512b14d55e82bde213bf2e4f6de4c4a96a`; a suíte SQL autenticada continua pendente e isso não é `READY FOR MERGE`.
+- Organizational Memory + Event Layer V1: `READY FOR STAGING` na branch `feature/organizational-memory-event-layer-v1`, baseada exatamente em `f8670a512b14d55e82bde213bf2e4f6de4c4a96a`; correção mínima da suíte, build/typecheck e fechamento técnico concluídos. A execução SQL autenticada em staging continua pendente e `READY FOR STAGING` não é `READY FOR MERGE`.
+
 Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f8670a512b14d55e82bde213bf2e4f6de4c4a96a`. A suíte SQL autenticada ainda depende de staging descartável autorizado. Este estado não autoriza merge nem aplicação em produção.
+
+
+| 2026-09-01 | Organizational Memory + Event Layer V1 usa PostgreSQL com relações temporais e eventos leves append-oriented. | Manter a base operacional existente e criar memória estruturada sem graph database ou event sourcing completo. | Não há replay, Kafka/queue, trigger global ou substituição das tabelas operacionais. |
+| 2026-09-01 | Memória distingue explicitamente `fact`, `declaration`, `reading`, `hypothesis`, `decision`, `intervention` e `outcome`; hipótese nunca é fato. | Preservar o tipo epistemológico e evitar promoção silenciosa de incerteza. | `knowledge_kind` é controlado; `hypothesis` permanece identificada como hipótese. |
+| 2026-09-01 | Relações históricas são preservadas por encerramento temporal e nova inserção, sem sobrescrever a história. | Permitir mudanças de gestor/cargo/área/unidade com rastreabilidade. | `valid_until` não pode anteceder `valid_from`; IDs polimórficos são descritivos e não autorizam acesso. |
+| 2026-09-01 | Vocabulários de entidades, relações e eventos são catálogos controlados e extensíveis por mudança explícita. | Impedir texto arbitrário silencioso e manter contrato evolutivo. | Eventos de compliance de treinamento entram apenas como contrato futuro, com `implemented=false`; a funcionalidade não está neste PR. |
+| 2026-09-01 | O event layer registra ocorrências, não estado atual. | Separar fatos ocorridos das tabelas operacionais e evitar event sourcing implícito. | Eventos são append-oriented; V1 não implementa replay nem captura automática por triggers. |
+| 2026-09-01 | RLS de memória/eventos é tenant-safe e conservador. | Evitar leitura genérica por gestor/colaborador e vazamento entre organizações. | Admin/RH gerem no próprio tenant; diretoria lê somente sensibilidades permitidas; IDs polimórficos não substituem autorização. |
+| 2026-09-01 | Contexto e payload são JSONB objeto; conversa bruta da Bee não é armazenada. | Preservar estrutura mínima e privacidade. | Serviços expõem leitura tipada; não há prompt completo, conversa ou mensagem bruta. |
+
+| 2026-09-01 | Organizational Memory + Event Layer V1 concluiu a correção mínima da suíte e o Build/typecheck e entrou em `READY FOR STAGING`. | Separar fechamento técnico da execução SQL autenticada em staging e do merge. | `READY FOR STAGING` não é `READY FOR MERGE`; staging autenticado e decisão posterior continuam obrigatórios. |
 
 ## Entrega futura registrada
 

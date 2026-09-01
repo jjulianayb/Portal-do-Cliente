@@ -29,7 +29,7 @@ As etapas abaixo são planejamento futuro. Não estão implementadas nesta branc
 
 | Próxima entrega | Prazo-alvo / gate |
 |---|---|
-| Organizational Memory + Event Layer | 03/09/2026 |
+| Organizational Memory + Event Layer V1 | **READY FOR STAGING** | Zapia / Dodo | correção mínima da suíte concluída; contrato PostgreSQL aditivo; PR empilhado sobre Bee Actions + Impact | auditoria técnica fechada; staging autenticado pendente; não é READY FOR MERGE |
 | Training Compliance & Development Calendar | Futuro; não implementado |
 | Decision Engine + wiring core | 04/09/2026 |
 | Organizational Reading Engine V1 | 05/09/2026 |
@@ -48,7 +48,11 @@ As etapas abaixo são planejamento futuro. Não estão implementadas nesta branc
 - PR #1, PR #2 e PR #4 aguardam execução autenticada assim que o staging descartável autorizado estiver disponível.
 - O PR #4 permanece limitado à fundação estrutural de Recommendation & Intervention V1.
 
+
+## Organizational Memory + Event Layer V1
+
+A nova branch `feature/organizational-memory-event-layer-v1` parte exatamente do head congelado `f8670a512b14d55e82bde213bf2e4f6de4c4a96a` e implementa somente a camada de memória organizacional temporal e o event layer leve. O estado inicial foi `BUILDING`; código, build/typecheck e correção final da suíte foram concluídos e o estado atual é `READY FOR STAGING`. A execução SQL autenticada em staging continua pendente; `READY FOR STAGING` não é `READY FOR MERGE`. O escopo não usa graph database, não implementa event sourcing completo, replay, Kafka/queue ou automação de triggers; PostgreSQL permanece a base.
+
 ## Entrega futura — Training Compliance & Development Calendar
 
 Entrega futura, **NÃO IMPLEMENTADA** e fora do PR #5. Escopo planejado: catálogo de treinamentos obrigatórios e de desenvolvimento; aplicabilidade por cargo, área e unidade; periodicidade e validade; histórico; próxima realização; calendário individual; alertas configuráveis para colaborador, gestor, RH/SSMA e facilitador; convocação; presença/conclusão; certificado; recertificação; status em dia, vencendo, agendamento necessário, vencido ou não aplicável; e integração futura com Bee, Organizational Reading e Impact.
-
