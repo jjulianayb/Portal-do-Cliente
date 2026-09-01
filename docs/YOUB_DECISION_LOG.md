@@ -65,3 +65,12 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - Recommendation, Decision, Approval, Intervention, Action e Outcome são contratos distintos. Decidir ou aprovar não executa ação e não cria intervenção automaticamente.
 - O Decision Engine usa a escala de risco Bee Action existente, mantém snapshots de evidência e registra decisões superseded sem apagar o histórico. `scope_ref` é descritivo e nunca autoriza acesso.
 - A Bee poderá preparar/draftar decisões no futuro, mas nunca autoaprovar decisão sensível; não há LLM, scoring, UI final, Evidence Engine automático, Organizational Reading Engine ou Bee Runtime nesta entrega.
+
+### Hardening final do Decision Engine V1
+
+- Diretoria pode decidir, revisar decisões em `draft`/`pending_review` e aprovar somente quando for o approver requerido (`approval_required=true`, `required_approver_role='diretoria'`).
+- Revisões são append-only em `intelligence_decision_revisions`; snapshots anterior/novo, autoria, motivo e número da revisão são preservados.
+- Alteração substantiva durante `pending_approval` devolve a decisão para `pending_review` e precisa ser revisada antes da aprovação final.
+- Aprovação, rejeição e retorno para revisão usam funções controladas e provenance clara; a Bee não pode autoaprovar decisões sensíveis.
+- Atualização autenticada direta foi revogada. Depois de `decided`/`effective`, uma mudança exige nova Decision via supersession controlada.
+- Semântica corrigida: a nova Decision aponta para a predecessora; a predecessora recebe `superseded`; sucessora e predecessora permanecem disponíveis.
