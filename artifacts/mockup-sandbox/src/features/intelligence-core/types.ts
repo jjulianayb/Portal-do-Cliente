@@ -89,3 +89,14 @@ export type IntelligenceDecisionIntervention = {
   context: Record<string, unknown>;
   created_at: string;
 };
+export type IntelligenceDecisionRevision = {
+  id: string;
+  organization_id: string;
+  decision_id: string;
+  revision_number: number;
+  changed_by_user_id: string;
+  change_reason: string;
+  previous_snapshot: Record<string, unknown>;
+  new_snapshot: Record<string, unknown>;
+  created_at: string;
+};
