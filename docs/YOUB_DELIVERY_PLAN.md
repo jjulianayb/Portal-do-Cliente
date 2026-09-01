@@ -29,7 +29,7 @@ As etapas abaixo são planejamento futuro. Não estão implementadas nesta branc
 
 | Próxima entrega | Prazo-alvo / gate |
 |---|---|
-| Organizational Memory + Event Layer V1 | **BUILDING** | Zapia / Dodo | contrato PostgreSQL aditivo; PR empilhado sobre Bee Actions + Impact | concluir código/build e então AUDIT; nunca READY FOR STAGING antes da auditoria de Dodo |
+| Organizational Memory + Event Layer V1 | **AUDIT** | Zapia / Dodo | código/build concluídos; contrato PostgreSQL aditivo; PR empilhado sobre Bee Actions + Impact | auditoria de Dodo pendente; nunca READY FOR STAGING antes da auditoria |
 | Training Compliance & Development Calendar | Futuro; não implementado |
 | Decision Engine + wiring core | 04/09/2026 |
 | Organizational Reading Engine V1 | 05/09/2026 |
@@ -51,7 +51,7 @@ As etapas abaixo são planejamento futuro. Não estão implementadas nesta branc
 
 ## Organizational Memory + Event Layer V1
 
-A nova branch `feature/organizational-memory-event-layer-v1` parte exatamente do head congelado `f8670a512b14d55e82bde213bf2e4f6de4c4a96a` e implementa somente a camada de memória organizacional temporal e o event layer leve. O estado inicial é `BUILDING`; após código e build, passa a `AUDIT`. Não está `READY FOR STAGING` e não será promovida antes da auditoria de Dodo. O escopo não usa graph database, não implementa event sourcing completo, replay, Kafka/queue ou automação de triggers; PostgreSQL permanece a base.
+A nova branch `feature/organizational-memory-event-layer-v1` parte exatamente do head congelado `f8670a512b14d55e82bde213bf2e4f6de4c4a96a` e implementa somente a camada de memória organizacional temporal e o event layer leve. O estado inicial foi `BUILDING`; código e build foram concluídos e o estado atual é `AUDIT`. Não está `READY FOR STAGING` e não será promovida antes da auditoria de Dodo. O escopo não usa graph database, não implementa event sourcing completo, replay, Kafka/queue ou automação de triggers; PostgreSQL permanece a base.
 
 ## Entrega futura — Training Compliance & Development Calendar
 
