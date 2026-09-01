@@ -61,7 +61,7 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 ## Decision Engine + Wiring Core V1
 
 - PR #6 permanece `READY FOR STAGING`, congelado no head `023c07d52150955d488ae124fab4a6371b9e3eff`; não será alterado salvo bug real posterior.
-- Decision Engine + Wiring Core V1 está em `AUDIT` na branch `feature/decision-engine-v1`, criada exatamente a partir do head congelado do PR #6. Código e Build/typecheck foram concluídos; o PR nunca deve ir diretamente a `READY FOR STAGING` antes da auditoria de Dodo.
+- Decision Engine + Wiring Core V1 está em `READY FOR STAGING` na branch `feature/decision-engine-v1`, após a correção mínima da assertion JSON e novo Build/typecheck. `READY FOR STAGING` não é `READY FOR MERGE`; a execução SQL autenticada em staging continua pendente.
 - Recommendation, Decision, Approval, Intervention, Action e Outcome são contratos distintos. Decidir ou aprovar não executa ação e não cria intervenção automaticamente.
 - O Decision Engine usa a escala de risco Bee Action existente, mantém snapshots de evidência e registra decisões superseded sem apagar o histórico. `scope_ref` é descritivo e nunca autoriza acesso.
 - A Bee poderá preparar/draftar decisões no futuro, mas nunca autoaprovar decisão sensível; não há LLM, scoring, UI final, Evidence Engine automático, Organizational Reading Engine ou Bee Runtime nesta entrega.
