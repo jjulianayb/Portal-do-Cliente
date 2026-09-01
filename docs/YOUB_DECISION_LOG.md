@@ -78,7 +78,7 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 ## Organizational Reading Engine V1
 
 - PR #8 permanece `READY FOR STAGING`, congelado no head `7a099b4353eb23109215f6ee7cb8e7a24e38750b`; não deve ser alterado salvo bug real comprovado.
-- Organizational Reading Engine V1 está em `AUDIT` na branch `feature/organizational-reading-engine-v1`, criada exatamente do head do PR #8. Código e Build/typecheck foram concluídos; não segue diretamente para `READY FOR STAGING` antes da auditoria.
+- Organizational Reading Engine V1 está em `READY FOR STAGING` na branch `feature/organizational-reading-engine-v1`, após o hardening final da suíte e novo Build/typecheck. `READY FOR STAGING` não é `READY FOR MERGE`; a execução SQL/RLS autenticada em staging continua pendente.
 - O conceito exposto é **Leitura Organizacional**. `intelligence_signals` continua somente como nome técnico legado quando necessário; `signal/sinal` não é o conceito de produto.
 - Reading e Hypothesis são entidades epistemicamente distintas: Reading = interpretação estruturada; Hypothesis = explicação possível, sem confirmação causal automática.
 - O engine não gera Evidence, Recommendation, Decision, Intervention ou Action automaticamente e não implementa scoring, LLM, ML, diagnóstico ou UI final.
