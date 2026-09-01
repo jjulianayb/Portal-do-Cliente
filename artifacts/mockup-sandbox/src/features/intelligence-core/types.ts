@@ -45,3 +45,47 @@ export type OrganizationalMemorySourceType = "manual" | "system" | "service" | "
 export type OrganizationalMemoryRelation = { id: string; organization_id: string; source_entity_type: OrganizationalMemoryEntityType; source_entity_id: string; target_entity_type: OrganizationalMemoryEntityType; target_entity_id: string; relationship_type: OrganizationalMemoryRelationshipType; knowledge_kind: OrganizationalMemoryKnowledgeKind; valid_from: string; valid_until?: string | null; recorded_at: string; source_type: OrganizationalMemorySourceType; source_id?: string | null; sensitivity: SignalSensitivity; context: Record<string, unknown>; created_at: string; };
 export type OrganizationalEventType = "employee_created" | "employee_status_changed" | "area_changed" | "position_changed" | "manager_changed" | "feedback_recorded" | "checkin_recorded" | "pdi_created" | "pdi_updated" | "assessment_recorded" | "learning_assigned" | "learning_completed" | "organizational_reading_created" | "recommendation_created" | "decision_recorded" | "intervention_created" | "action_created" | "action_completed" | "outcome_recorded" | "training_assigned" | "training_scheduled" | "training_completed" | "training_expiring" | "training_expired" | "recertification_scheduled";
 export type OrganizationalEvent = { id: string; organization_id: string; event_type: OrganizationalEventType; entity_type: OrganizationalMemoryEntityType; entity_id: string; related_entity_type?: OrganizationalMemoryEntityType | null; related_entity_id?: string | null; occurred_at: string; recorded_at: string; source_type: OrganizationalMemorySourceType; source_id?: string | null; actor_user_id?: string | null; sensitivity: SignalSensitivity; payload: Record<string, unknown>; correlation_id?: string | null; created_at: string; };
+
+export type DecisionType = "accept_recommendation" | "select_alternative" | "request_evidence" | "defer" | "reject" | "no_action" | "maintain";
+export type DecisionScopeType = SignalScopeType;
+export type DecisionRiskLevel = BeeActionRiskLevel;
+export type DecisionStatus = "draft" | "pending_review" | "pending_approval" | "decided" | "effective" | "superseded" | "expired" | "cancelled";
+export type DecisionApproverRole = "admin_youb" | "rh" | "diretoria";
+export type IntelligenceDecision = {
+  id: string;
+  organization_id: string;
+  decision_type: DecisionType;
+  scope_type: DecisionScopeType;
+  scope_ref: string;
+  recommendation_id?: string | null;
+  decision_statement: string;
+  selected_option?: string | null;
+  alternatives_considered: unknown[];
+  rationale?: string | null;
+  evidence_snapshot: Record<string, unknown>;
+  unknowns: unknown[];
+  risk_level: DecisionRiskLevel;
+  risk_accepted: boolean;
+  status: DecisionStatus;
+  owner_employee_id?: string | null;
+  decision_maker_user_id?: string | null;
+  approval_required: boolean;
+  required_approver_role?: DecisionApproverRole | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  effective_at?: string | null;
+  review_at?: string | null;
+  supersedes_decision_id?: string | null;
+  context: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+};
+export type IntelligenceDecisionIntervention = {
+  id: string;
+  organization_id: string;
+  decision_id: string;
+  intervention_id: string;
+  relationship_type: "derived_from_decision";
+  context: Record<string, unknown>;
+  created_at: string;
+};
