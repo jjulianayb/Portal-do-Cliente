@@ -64,21 +64,27 @@ create or replace function public.intelligence_signal_read_allowed(target_org uu
       or (target_employee is not null and (public.intelligence_has_employee_scope(target_org, target_employee) or public.intelligence_is_own_employee(target_org, target_employee))));
 $$;
 
-grant execute on function public.intelligence_signal_sensitive_access(uuid, text), public.intelligence_signal_read_allowed(uuid, uuid, text) to authenticated;
+-- V1 direct writes are deliberately narrower than reads. Operational events such as
+-- check-ins, feedback and PDI remain the write-side inputs for future organizational readings.
+create or replace function public.intelligence_signal_write_allowed(target_org uuid) returns boolean language sql stable security definer set search_path = public as $$
+  select public.has_org_role(target_org, array['admin_youb','rh']);
+$$;
+
+grant execute on function public.intelligence_signal_sensitive_access(uuid, text), public.intelligence_signal_read_allowed(uuid, uuid, text), public.intelligence_signal_write_allowed(uuid) to authenticated;
 
 drop policy if exists intelligence_signals_select_role on public.intelligence_signals;
 drop policy if exists intelligence_signals_insert_role on public.intelligence_signals;
 drop policy if exists intelligence_signals_update_role on public.intelligence_signals;
 drop policy if exists intelligence_signals_delete_role on public.intelligence_signals;
 create policy intelligence_signals_select_role on public.intelligence_signals for select to authenticated using (public.intelligence_signal_read_allowed(organization_id, employee_id, sensitivity));
-create policy intelligence_signals_insert_role on public.intelligence_signals for insert to authenticated with check (public.intelligence_signal_read_allowed(organization_id, employee_id, sensitivity));
-create policy intelligence_signals_update_role on public.intelligence_signals for update to authenticated using (public.intelligence_signal_read_allowed(organization_id, employee_id, sensitivity)) with check (public.intelligence_signal_read_allowed(organization_id, employee_id, sensitivity));
+create policy intelligence_signals_insert_role on public.intelligence_signals for insert to authenticated with check (public.intelligence_signal_write_allowed(organization_id));
+create policy intelligence_signals_update_role on public.intelligence_signals for update to authenticated using (public.intelligence_signal_write_allowed(organization_id)) with check (public.intelligence_signal_write_allowed(organization_id));
 create policy intelligence_signals_delete_role on public.intelligence_signals for delete to authenticated using (public.intelligence_is_admin(organization_id));
 
 drop policy if exists intelligence_evidence_select_role on public.intelligence_evidence;
 create policy intelligence_evidence_select_role on public.intelligence_evidence for select to authenticated using (exists (select 1 from public.intelligence_signals s where s.id = signal_id and s.organization_id = intelligence_evidence.organization_id and public.intelligence_signal_read_allowed(s.organization_id, s.employee_id, s.sensitivity)));
 
-comment on table public.intelligence_signals is 'DADO → SINAL → PADRÃO → HIPÓTESE → EVIDÊNCIA → DECISÃO. V1 stores observations only; no confidence, diagnosis or automatic recommendation.';
-comment on table public.intelligence_evidence is 'Evidence may support, contradict or contextualize a signal. V1 has no strength or confidence calculation.';
+comment on table public.intelligence_signals is 'Leitura Organizacional: DADOS → CONTEXTO → LEITURAS ORGANIZACIONAIS → PADRÕES → HIPÓTESES → EVIDÊNCIAS → DECISÕES → AÇÕES → IMPACTO → MEMÓRIA ORGANIZACIONAL. Technical V1 storage is additive and read-oriented; no confidence, diagnosis or automatic recommendation.';
+comment on table public.intelligence_evidence is 'Evidence may support, contradict or contextualize a Leitura Organizacional. V1 has no strength or confidence calculation.';
 comment on column public.intelligence_signals.scope_ref is 'Descriptive target reference only; never an authorization mechanism.';
 comment on column public.intelligence_evidence.independence_group is 'Optional provenance grouping for future independence analysis; no weights are applied in V1.';
