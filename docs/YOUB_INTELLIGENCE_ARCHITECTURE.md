@@ -87,4 +87,4 @@ Para preservar histórico, o estado corrente pode ser revisado pelo caminho cont
 
 ### Estado da entrega
 
-O Organizational Reading Engine V1 está em `AUDIT` após código e Build/typecheck. PR #8 permanece `READY FOR STAGING`.
+O Organizational Reading Engine V1 está em `READY FOR STAGING` após o hardening final da suíte e o Build/typecheck. Isso não é `READY FOR MERGE`; a execução SQL/RLS autenticada em staging continua pendente. PR #8 permanece `READY FOR STAGING`.
