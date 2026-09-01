@@ -78,6 +78,48 @@ select pg_temp.assert_true('event payload must be JSON object',pg_temp.invalid_e
 select pg_temp.assert_true('event type catalog rejects arbitrary text',pg_temp.invalid_event_vocab());
 select pg_temp.assert_true('event sensitivity vocabulary rejects arbitrary text',pg_temp.invalid_event_sensitivity());
 
+select pg_temp.assert_true('event activation witness has true default',
+  (select column_default from information_schema.columns where table_schema='public' and table_name='organizational_events' and column_name='event_type_implemented') in ('true','true::boolean'));
+select pg_temp.assert_true('event activation witness CHECK exists',exists(select 1 from pg_constraint where conrelid='public.organizational_events'::regclass and conname='organizational_events_event_type_implemented_check'));
+select pg_temp.assert_true('event activation witness composite FK exists',exists(select 1 from pg_constraint where conrelid='public.organizational_events'::regclass and conname='organizational_events_event_type_implemented_fkey'));
+
+-- Authorized writer probes use valid entity, source, payload and tenant data.
+create or replace function pg_temp.training_event_rejected(candidate text) returns boolean language plpgsql security invoker as $$ begin
+  begin
+    insert into public.organizational_events(organization_id,event_type,entity_type,entity_id,occurred_at,source_type,actor_user_id,sensitivity,payload)
+    values((select value from ctx where key='org_a'),candidate,'employee',(select value from ctx where key='employee_a'),'2026-05-01','manual',(select value from ctx where key='user_5'),'standard','{}');
+    return false;
+  exception when others then return true;
+  end;
+end; $$;
+create or replace function pg_temp.rh_memory_insert_and_close() returns boolean language plpgsql security invoker as $$ declare relation_id uuid := '11111111-0000-0000-0000-000000000040'; begin
+  insert into public.organizational_memory_relations(id,organization_id,source_entity_type,source_entity_id,target_entity_type,target_entity_id,relationship_type,knowledge_kind,valid_from,source_type,source_id,sensitivity,context)
+  values(relation_id,(select value from ctx where key='org_a'),'decision',(select value from ctx where key='fact_a'),'employee',(select value from ctx where key='employee_a'),'concerns','declared','2026-05-01','manual','qa-rh-memory','standard','{}');
+  update public.organizational_memory_relations set valid_until='2026-05-31 23:59:59+00' where id=relation_id;
+  return (select valid_until='2026-05-31 23:59:59+00' from public.organizational_memory_relations where id=relation_id);
+end; $$;
+create or replace function pg_temp.rh_event_insert_ok() returns boolean language plpgsql security invoker as $$ declare event_id uuid := '11111111-0000-0000-0000-000000000041'; begin
+  insert into public.organizational_events(id,organization_id,event_type,entity_type,entity_id,occurred_at,source_type,actor_user_id,sensitivity,payload)
+  values(event_id,(select value from ctx where key='org_a'),'decision_recorded','decision',(select value from ctx where key='fact_a'),'2026-05-01','manual',(select value from ctx where key='user_5'),'standard','{}');
+  return exists(select 1 from public.organizational_events where id=event_id);
+end; $$;
+create or replace function pg_temp.memory_insert_denied_probe() returns boolean language plpgsql security invoker as $$ declare msg text; begin
+  begin
+    insert into public.organizational_memory_relations(organization_id,source_entity_type,source_entity_id,target_entity_type,target_entity_id,relationship_type,knowledge_kind,valid_from,source_type,sensitivity,context)
+    values((select value from ctx where key='org_a'),'fact',(select value from ctx where key='fact_a'),'employee',(select value from ctx where key='employee_a'),'concerns','fact','2026-06-01','manual','standard','{}');
+    return false;
+  exception when others then get stacked diagnostics msg=message_text; return msg ilike '%row-level security%';
+  end;
+end; $$;
+create or replace function pg_temp.event_insert_denied_probe() returns boolean language plpgsql security invoker as $$ declare msg text; begin
+  begin
+    insert into public.organizational_events(organization_id,event_type,entity_type,entity_id,occurred_at,source_type,sensitivity,payload)
+    values((select value from ctx where key='org_a'),'decision_recorded','decision',(select value from ctx where key='fact_a'),'2026-06-01','manual','standard','{}');
+    return false;
+  exception when others then get stacked diagnostics msg=message_text; return msg ilike '%row-level security%';
+  end;
+end; $$;
+
 create or replace function pg_temp.memory_cross_tenant_rls_probe() returns boolean language plpgsql security invoker as $$ declare msg text; begin begin insert into public.organizational_memory_relations(organization_id,source_entity_type,source_entity_id,target_entity_type,target_entity_id,relationship_type,knowledge_kind,valid_from,source_type,sensitivity,context) values((select value from ctx where key='org_b'),'fact',(select value from ctx where key='employee_b'),'employee',(select value from ctx where key='employee_b'),'concerns','fact','2026-04-01','manual','standard','{}'); return false; exception when others then get stacked diagnostics msg=message_text; return msg ilike '%row-level security%' or msg ilike '%permission denied%'; end; end; $$;
 create or replace function pg_temp.event_cross_tenant_rls_probe() returns boolean language plpgsql security invoker as $$ declare msg text; begin begin insert into public.organizational_events(id,organization_id,event_type,entity_type,entity_id,occurred_at,source_type,sensitivity,payload) values((select value from ctx where key='event_b_probe'),(select value from ctx where key='org_b'),'employee_created','employee',(select value from ctx where key='employee_b'),'2026-04-01','manual','standard','{}'); return false; exception when others then get stacked diagnostics msg=message_text; return msg ilike '%row-level security%' or msg ilike '%permission denied%'; end; end; $$;
 
@@ -99,16 +141,34 @@ select pg_temp.assert_true('diretoria reads standard organizational memory',exis
 select pg_temp.assert_true('diretoria does not read highly sensitive memory',not exists(select 1 from public.organizational_memory_relations where organization_id=(select value from ctx where key='org_a') and sensitivity='highly_sensitive'));
 select pg_temp.assert_true('diretoria reads standard events',exists(select 1 from public.organizational_events where organization_id=(select value from ctx where key='org_a') and sensitivity='standard'));
 
+select set_config('request.jwt.claim.sub',(select value::text from ctx where key='user_2'),true);
+select pg_temp.assert_true('diretoria cannot insert memory',pg_temp.memory_insert_denied_probe());
+select pg_temp.assert_true('diretoria cannot insert event',pg_temp.event_insert_denied_probe());
+
 select set_config('request.jwt.claim.sub',(select value::text from ctx where key='user_3'),true);
+select pg_temp.assert_true('gestor cannot insert memory',pg_temp.memory_insert_denied_probe());
+select pg_temp.assert_true('gestor cannot insert event',pg_temp.event_insert_denied_probe());
 select pg_temp.assert_true('gestor has no generic memory read',not exists(select 1 from public.organizational_memory_relations where organization_id=(select value from ctx where key='org_a')));
 select pg_temp.assert_true('gestor has no generic event read',not exists(select 1 from public.organizational_events where organization_id=(select value from ctx where key='org_a')));
 select set_config('request.jwt.claim.sub',(select value::text from ctx where key='user_4'),true);
+select pg_temp.assert_true('colaborador cannot insert memory',pg_temp.memory_insert_denied_probe());
+select pg_temp.assert_true('colaborador cannot insert event',pg_temp.event_insert_denied_probe());
 select pg_temp.assert_true('colaborador has no generic memory read',not exists(select 1 from public.organizational_memory_relations where organization_id=(select value from ctx where key='org_a')));
 select pg_temp.assert_true('colaborador has no generic event read',not exists(select 1 from public.organizational_events where organization_id=(select value from ctx where key='org_a')));
 
 select set_config('request.jwt.claim.sub',(select value::text from ctx where key='user_5'),true);
+select pg_temp.assert_true('RH can insert and close own memory relation',pg_temp.rh_memory_insert_and_close());
+select pg_temp.assert_true('RH can insert valid own event',pg_temp.rh_event_insert_ok());
 select pg_temp.assert_true('RH manages own memory',exists(select 1 from public.organizational_memory_relations where organization_id=(select value from ctx where key='org_a')));
 select pg_temp.assert_true('RH reads own events',exists(select 1 from public.organizational_events where organization_id=(select value from ctx where key='org_a')));
+
+-- Future Training Compliance contracts remain visible but cannot be recorded.
+select pg_temp.assert_true('training_assigned is inactive and rejected',pg_temp.training_event_rejected('training_assigned'));
+select pg_temp.assert_true('training_scheduled is inactive and rejected',pg_temp.training_event_rejected('training_scheduled'));
+select pg_temp.assert_true('training_completed is inactive and rejected',pg_temp.training_event_rejected('training_completed'));
+select pg_temp.assert_true('training_expiring is inactive and rejected',pg_temp.training_event_rejected('training_expiring'));
+select pg_temp.assert_true('training_expired is inactive and rejected',pg_temp.training_event_rejected('training_expired'));
+select pg_temp.assert_true('recertification_scheduled is inactive and rejected',pg_temp.training_event_rejected('recertification_scheduled'));
 select pg_temp.assert_true('RH cannot read cross-tenant memory',not exists(select 1 from public.organizational_memory_relations where organization_id=(select value from ctx where key='org_b')));
 select pg_temp.assert_true('RH cannot read cross-tenant events',not exists(select 1 from public.organizational_events where organization_id=(select value from ctx where key='org_b')));
 
