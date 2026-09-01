@@ -57,3 +57,20 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 ## Entrega futura registrada
 
 **Training Compliance & Development Calendar** permanece futura e **NÃO IMPLEMENTADA**. O escopo planejado inclui catálogo obrigatório e de desenvolvimento, aplicabilidade por cargo/área/unidade, periodicidade/validade, histórico, próxima realização, calendário individual, alertas configuráveis para colaborador, gestor, RH/SSMA e facilitador, convocação, presença/conclusão, certificado, recertificação, status em dia/vencendo/agendamento necessário/vencido/não aplicável e integração futura com Bee, Organizational Reading e Impact.
+
+## Decision Engine + Wiring Core V1
+
+- PR #6 permanece `READY FOR STAGING`, congelado no head `023c07d52150955d488ae124fab4a6371b9e3eff`; não será alterado salvo bug real posterior.
+- Decision Engine + Wiring Core V1 está em `READY FOR STAGING` na branch `feature/decision-engine-v1`, após a correção mínima da assertion JSON e novo Build/typecheck. `READY FOR STAGING` não é `READY FOR MERGE`; a execução SQL autenticada em staging continua pendente.
+- Recommendation, Decision, Approval, Intervention, Action e Outcome são contratos distintos. Decidir ou aprovar não executa ação e não cria intervenção automaticamente.
+- O Decision Engine usa a escala de risco Bee Action existente, mantém snapshots de evidência e registra decisões superseded sem apagar o histórico. `scope_ref` é descritivo e nunca autoriza acesso.
+- A Bee poderá preparar/draftar decisões no futuro, mas nunca autoaprovar decisão sensível; não há LLM, scoring, UI final, Evidence Engine automático, Organizational Reading Engine ou Bee Runtime nesta entrega.
+
+### Hardening final do Decision Engine V1
+
+- Diretoria pode decidir, revisar decisões em `draft`/`pending_review` e aprovar somente quando for o approver requerido (`approval_required=true`, `required_approver_role='diretoria'`).
+- Revisões são append-only em `intelligence_decision_revisions`; snapshots anterior/novo, autoria, motivo e número da revisão são preservados.
+- Alteração substantiva durante `pending_approval` devolve a decisão para `pending_review` e precisa ser revisada antes da aprovação final.
+- Aprovação, rejeição e retorno para revisão usam funções controladas e provenance clara; a Bee não pode autoaprovar decisões sensíveis.
+- Atualização autenticada direta foi revogada. Depois de `decided`/`effective`, uma mudança exige nova Decision via supersession controlada.
+- Semântica corrigida: a nova Decision aponta para a predecessora; a predecessora recebe `superseded`; sucessora e predecessora permanecem disponíveis.
