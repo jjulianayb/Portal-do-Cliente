@@ -70,3 +70,11 @@ Ficam fora desta entrega: Organizational Reading Engine, Evidence Engine automá
 O Decision Engine V1 passa a tratar Decision como objeto colaborativo e versionável durante `draft` e `pending_review`. `admin_youb`, RH e diretoria usam caminho controlado de revisão; diretoria também pode, em `pending_approval`, aprovar como está, rejeitar, devolver para revisão ou propor alteração substantiva. A revisão substantiva é atômica e grava `intelligence_decision_revisions` append-only com snapshot anterior, snapshot novo, autoria, motivo e número sequencial.
 
 Atualizações diretas autenticadas foram removidas. Após `decided` ou `effective`, o conteúdo corrente e o `evidence_snapshot` não podem ser reescritos silenciosamente. Mudanças posteriores usam uma nova Decision: a sucessora referencia a predecessora em `supersedes_decision_id`, enquanto a predecessora passa a `superseded`; ambas permanecem históricas.
+
+## Organizational Reading Engine V1 — BUILDING
+
+A nova branch `feature/organizational-reading-engine-v1` parte exatamente do head `7a099b4353eb23109215f6ee7cb8e7a24e38750b` do PR #8, que permanece `READY FOR STAGING`. Esta entrega implementa somente a fundação estrutural e de provenance da **Leitura Organizacional**. Após código e Build/typecheck, o estado será `AUDIT`; não será promovida a `READY FOR STAGING` antes da auditoria correspondente.
+
+A cadeia epistemológica permanece: DADOS → CONTEXTO → LEITURAS ORGANIZACIONAIS → PADRÕES → HIPÓTESES → EVIDÊNCIAS → RECOMENDAÇÕES → DECISÕES → INTERVENÇÕES → AÇÕES → IMPACTO → MEMÓRIA ORGANIZACIONAL. Uma Leitura descreve uma interpretação estruturada do que a organização apresenta; uma Hipótese é uma explicação possível e não causa confirmada.
+
+A fundação usa taxonomia e lifecycle controlados, janelas de observação, provenance para múltiplas fontes existentes e integração explícita com Memory/Event Layer. Não há geração automática de evidências, scoring, ranking, machine learning, LLM, diagnóstico ou criação automática de Recommendation, Decision, Intervention ou Action.
