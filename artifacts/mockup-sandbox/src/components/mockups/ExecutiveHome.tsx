@@ -58,7 +58,8 @@ export function buildDetailChain(model: BeeRuntimeReadModel, selected: BeeRuntim
   if (recommendation) { chain.recommendation = [chainItem("Recommendation", recommendation.finding)]; const recReading = readings.find((item) => recommendation.linkedReadingIds.includes(item.finding.id)); if (!chain.hypothesis.length && recReading) chain.hypothesis = recReading.hypotheses.filter((item) => recommendation.linkedHypothesisIds.includes(item.id)).map((item) => chainItem("Hypothesis", item)); if (!chain.evidence.length) chain.evidence = recommendation.linkedEvidence.map((item) => chainItem("Evidence", item.finding)); }
   const decision = selectedDecision ?? (recommendation ? model.decisions.find((item) => item.recommendationId === recommendation.finding.id) : undefined);
   if (decision) chain.decision = [chainItem("Decision", decision.finding)];
-  const resolvedIntervention = intervention ?? (decision ? model.interventions.find((item) => item.decisionId === decision.finding.id) : undefined) ?? (recommendation ? model.interventions.find((item) => item.recommendationId === recommendation.finding.id) : undefined);
+  const decisionIntervention = decision ? model.interventions.find((item) => decision.interventionIds.includes(item.finding.id)) : undefined;
+  const resolvedIntervention = intervention ?? decisionIntervention ?? (recommendation ? model.interventions.find((item) => item.recommendationId === recommendation.finding.id) : undefined);
   if (resolvedIntervention) chain.intervention = [chainItem("Intervention", resolvedIntervention.finding)];
   if (action && !chain.action.some((item) => item.finding.id === action.finding.id)) chain.action = [chainItem("Action", action.finding)];
   const resolvedOutcome = selectedOutcome ?? (action ? model.outcomes.find((item) => item.actionId === action.finding.id) : undefined) ?? (resolvedIntervention ? model.outcomes.find((item) => item.interventionId === resolvedIntervention.finding.id) : undefined);
