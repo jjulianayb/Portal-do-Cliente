@@ -116,3 +116,10 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - Atalhos sem rotas reais foram omitidos. Nenhuma rota de módulo foi inventada.
 - Gap conhecido: **Manager/team authorized population wiring pending**. Não criar scope de equipe artificial neste PR.
 - `bee-runtime.ts`, as sete suítes SQL, migrations, `main` e PR #11 permanecem inalterados.
+
+## Último fix auditado — Decision → Intervention
+
+- `buildDetailChain` passa a localizar Intervention por `decision.interventionIds`, conforme o contrato real do Bee Runtime V1.
+- `BeeInterventionNode.decisionId` permanece nulo na fixture e não é usado como fonte principal.
+- Foi adicionado teste específico para Decision com `interventionIds = ["int-a"]` encontrar a Intervention correspondente.
+- PR #12 continua `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
