@@ -123,3 +123,11 @@ As funções de explicação preservam linguagem epistemicamente segura: hipóte
 ### Estado da entrega
 
 Bee Runtime V1 está em `READY FOR STAGING` após código, testes verificáveis e Build/typecheck. Isso não é `READY FOR MERGE`. PR #10 permanece `READY FOR STAGING`, congelado no head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e`; não há migration e SQL/RLS runtime autenticado continua pendente.
+
+## Product Wiring + Executive Home V1
+
+A experiência de Home executiva é um consumidor do Bee Runtime V1, não um novo engine. A rota `/executive` carrega uma vez o read model autorizado e deriva dele o resumo executivo, as prioridades, listas de exceção e o detalhe estruturado. O detalhe chama `explainReading` e `explainRecommendation`, preservando a cadeia Reading → Hypothesis → Evidence → Evidence Assessment → Recommendation → Decision → Intervention → Action → Outcome.
+
+A Home usa `attentionToday` sem recalcular epistemologia, causalidade ou score na UI. Cards exibem regra de prioridade, resumo, status, evidence state quando disponível, data e CTA de aprofundamento. Empty, loading e error states não confundem ausência autorizada com execução ou decisão.
+
+Para papéis organizacionais, o contexto é montado com escopos explícitos e os resultados continuam subordinados ao RLS. Para colaborador, a rota não exibe Home de inteligência organizacional e encaminha para a experiência pessoal já existente. Quick actions chamam intents determinísticos do Runtime; não há write, chat persistente, LLM ou audit log de consulta.
