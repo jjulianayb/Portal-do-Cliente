@@ -146,3 +146,7 @@ O detail expõe a cadeia somente quando cada relação está presente no `BeeRun
 Não existem rotas reais verificadas para os atalhos Pessoas, Avaliações, PDI e desenvolvimento ou Relatórios no mockup atual; por isso os cards foram omitidos. Gap registrado: **Manager/team authorized population wiring pending**. A população autorizada de equipe do gestor será conectada com a estrutura de pessoas/equipes em entrega posterior.
 
 O estado desta correção permanece `AUDIT → FIX`; não é `READY FOR STAGING`.
+
+### Correção de relação Decision → Intervention
+
+O Product Wiring resolve Decision → Intervention somente a partir de `BeeDecisionNode.interventionIds`, que é a relação explícita preenchida no read model real. `BeeInterventionNode.decisionId` pode permanecer nulo e não é tratado como fonte principal. A cadeia continua read-only, sem alteração do Runtime congelado.
