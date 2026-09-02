@@ -131,3 +131,8 @@ A experiência de Home executiva é um consumidor do Bee Runtime V1, não um nov
 A Home usa `attentionToday` sem recalcular epistemologia, causalidade ou score na UI. Cards exibem regra de prioridade, resumo, status, evidence state quando disponível, data e CTA de aprofundamento. Empty, loading e error states não confundem ausência autorizada com execução ou decisão.
 
 Para papéis organizacionais, o contexto é montado com escopos explícitos e os resultados continuam subordinados ao RLS. Para colaborador, a rota não exibe Home de inteligência organizacional e encaminha para a experiência pessoal já existente. Quick actions chamam intents determinísticos do Runtime; não há write, chat persistente, LLM ou audit log de consulta.
+
+
+### Estado da entrega
+
+Product Wiring + Executive Home V1 está em `AUDIT` após código, Build e testes. PR #11 permanece `READY FOR STAGING`, congelado no head `25e5fff0540ab460ce16fededbc47b2e1e71e91f`. Esta entrega não é `READY FOR STAGING` nem `READY FOR MERGE`; não há migration nem validação de staging.
