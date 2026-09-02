@@ -32,6 +32,8 @@ jobs:
         run: pnpm run build
       - name: Run Bee Runtime unit tests
         run: pnpm --filter @workspace/scripts run test:bee-runtime
+      - name: Run classic DHO access query tests
+        run: pnpm --filter @workspace/scripts run test:classic-dho-access
       - name: Archive deployable preview
         uses: actions/upload-artifact@v4
         with:
