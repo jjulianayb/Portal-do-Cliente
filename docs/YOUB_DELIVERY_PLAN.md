@@ -86,3 +86,9 @@ A nova branch `feature/evidence-recommendation-operational-v1` parte exatamente 
 A avaliação registra evidências que sustentam e contradizem, unknowns, limitations, resumo e `evidence_state`, sem transformar contagens em verdade ou probabilidade de causa. `insufficient` não pode promover Recommendation para `proposed`/`accepted`; `weak` pode sustentar apenas uma Recommendation cautelosa com limitações explícitas.
 
 Recommendations continuam distintas de Decisions e não criam Decision, Intervention, Action ou Outcome automaticamente. Não há LLM, ML, scoring, ranking, causalidade automática ou diagnóstico.
+
+## Bee Runtime V1 — READY FOR STAGING
+
+A nova branch `feature/bee-runtime-v1` parte exatamente do head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e` do PR #10, que permanece `READY FOR STAGING`. Esta entrega cria somente a camada TypeScript read-only, determinística e tenant-safe para compor e explicar os contratos de inteligência existentes sob a autorização já aplicada pelo RLS. Código, testes verificáveis e Build/typecheck foram concluídos; o estado atual é `READY FOR STAGING`. Isso não é `READY FOR MERGE`; SQL/RLS runtime autenticado das fundações continua pendente.
+
+O Runtime não cria, altera ou executa qualquer entidade. Não usa LLM, ML, scoring opaco, NLP complexo, chat persistente, raw prompt, conversa bruta ou chain-of-thought. A Bee pode entender e explicar; não pode conceder permissão a si mesma, apresentar hipótese como fato ou Recommendation como Decision.

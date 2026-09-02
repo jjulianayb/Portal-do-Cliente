@@ -108,3 +108,18 @@ Evidence + Recommendation Operational V1 está em `READY FOR STAGING` após os d
 ### Compatibilidade da Recommendation Evidence
 
 A relação histórica `intelligence_recommendation_evidence` preserva a identidade composta `organization_id + recommendation_id + evidence_id` e não possui coluna sintética `id`. `evidence_relation` e `context` foram adicionados aditivamente. Portanto, a mesma Evidence não pode simultaneamente ser `supports` e `contradicts` na mesma Recommendation; essa exclusividade é intencional e coberta pela suíte. Types e service usam a identidade composta real.
+
+## Bee Runtime V1
+
+O Bee Runtime V1 é uma camada read-only e determinística sobre os read services existentes. Ele carrega, sob RLS e sem bypass, Readings, Reading Sources, Hypotheses, Evidence, Evidence Assessments, Recommendations, Decisions, revisões/intervenções permitidas, Organizational Memory, Events, Actions e Outcomes. O compositor retorna um read model estruturado com bundles `Reading → Hypothesis → Evidence/Assessment → Recommendation → Decision → Intervention/Action/Outcome`, além de provenance, unknowns e limitations; não retorna dumps brutos, payloads desnecessários, prompts ou conversas.
+
+`BeeRuntimeContext` exige organization, usuário, papel, employee quando aplicável, escopos autorizados, população implícita nos escopos, sensitivity permitida e purpose. Para colaboradores, o Runtime restringe a contextos pessoais autorizados; para demais papéis, só considera escopos explicitamente fornecidos e resultados que o RLS já devolveu. `scope_ref` nunca é autorização e o Runtime não cria permissões paralelas.
+
+Os intents V1 são determinísticos: `attention_today`, `explain_reading`, `explain_hypothesis`, `explain_evidence`, `explain_recommendation`, `explain_decision`, `list_unknowns`, `list_open_readings`, `list_actions` e `explain_outcome`. `attention_today` prioriza, nesta ordem transparente, risco aberto, evidência conflitante, evidência insuficiente em investigação, Recommendation que exige aprovação, Decision pendente, Action próxima/vencida e Outcome não validado, com limite padrão de cinco itens.
+
+As funções de explicação preservam linguagem epistemicamente segura: hipótese é hipótese em investigação; Reading é leitura registrada; Recommendation é proposta preparada; Decision é decisão registrada; Action não é declarada executada pela Bee. `insufficient` e `conflicting` são sinalizados explicitamente. O Runtime não escreve, não executa, não cria Recommendation/Decision/Intervention/Action/Outcome e não registra cada consulta como evento.
+
+
+### Estado da entrega
+
+Bee Runtime V1 está em `READY FOR STAGING` após código, testes verificáveis e Build/typecheck. Isso não é `READY FOR MERGE`. PR #10 permanece `READY FOR STAGING`, congelado no head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e`; não há migration e SQL/RLS runtime autenticado continua pendente.
