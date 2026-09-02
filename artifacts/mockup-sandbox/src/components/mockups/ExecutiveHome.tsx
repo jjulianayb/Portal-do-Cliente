@@ -42,8 +42,9 @@ export function buildDetailChain(model: BeeRuntimeReadModel, selected: BeeRuntim
   const selectedIntervention = model.interventions.find((item) => item.finding.id === selected.id);
   const selectedAction = model.actions.find((item) => item.finding.id === selected.id);
   const selectedOutcome = model.outcomes.find((item) => item.finding.id === selected.id);
-  const recommendation = selectedRecommendation ?? (selectedDecision?.recommendationId ? model.recommendations.find((item) => item.finding.id === selectedDecision.recommendationId) : undefined) ?? (selectedIntervention?.recommendationId ? model.recommendations.find((item) => item.finding.id === selectedIntervention.recommendationId) : undefined);
-  const intervention = selectedIntervention ?? (selectedAction?.interventionId ? model.interventions.find((item) => item.finding.id === selectedAction.interventionId) : undefined) ?? (selectedOutcome?.interventionId ? model.interventions.find((item) => item.finding.id === selectedOutcome.interventionId) : undefined);
+  const directIntervention = (selectedAction?.interventionId ?? selectedOutcome?.interventionId) ? model.interventions.find((item) => item.finding.id === (selectedAction?.interventionId ?? selectedOutcome?.interventionId)) : undefined;
+  const recommendation = selectedRecommendation ?? (selectedDecision?.recommendationId ? model.recommendations.find((item) => item.finding.id === selectedDecision.recommendationId) : undefined) ?? (selectedIntervention?.recommendationId ? model.recommendations.find((item) => item.finding.id === selectedIntervention.recommendationId) : undefined) ?? (directIntervention?.recommendationId ? model.recommendations.find((item) => item.finding.id === directIntervention.recommendationId) : undefined);
+  const intervention = selectedIntervention ?? directIntervention;
   const action = selectedAction ?? (selectedOutcome?.actionId ? model.actions.find((item) => item.finding.id === selectedOutcome.actionId) : undefined);
   let reading = selectedReading;
   if (!reading && selectedAssessment) reading = readings.find((item) => item.assessments.some((assessment) => assessment.finding.id === selectedAssessment.finding.id));
