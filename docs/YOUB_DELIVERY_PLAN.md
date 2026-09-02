@@ -92,3 +92,44 @@ Recommendations continuam distintas de Decisions e não criam Decision, Interven
 A nova branch `feature/bee-runtime-v1` parte exatamente do head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e` do PR #10, que permanece `READY FOR STAGING`. Esta entrega cria somente a camada TypeScript read-only, determinística e tenant-safe para compor e explicar os contratos de inteligência existentes sob a autorização já aplicada pelo RLS. Código, testes verificáveis e Build/typecheck foram concluídos; o estado atual é `READY FOR STAGING`. Isso não é `READY FOR MERGE`; SQL/RLS runtime autenticado das fundações continua pendente.
 
 O Runtime não cria, altera ou executa qualquer entidade. Não usa LLM, ML, scoring opaco, NLP complexo, chat persistente, raw prompt, conversa bruta ou chain-of-thought. A Bee pode entender e explicar; não pode conceder permissão a si mesma, apresentar hipótese como fato ou Recommendation como Decision.
+
+## Product Wiring + Executive Home V1 — AUDIT
+
+A nova branch `feature/product-wiring-executive-home-v1` parte exatamente do head `25e5fff0540ab460ce16fededbc47b2e1e71e91f` do PR #11, que permanece `READY FOR STAGING`. Esta entrega conecta o Bee Runtime à experiência visível da plataforma em uma Home executiva orientada a exceções, sem duplicar entidades ou reconstruir módulos antigos. Código, Build e testes foram concluídos; o estado atual é `AUDIT`. Não promover automaticamente para `READY FOR STAGING` antes da auditoria.
+
+A Home utiliza `attentionToday`, o read model e os handlers determinísticos do Bee Runtime. A experiência preserva Reading, Hypothesis, Evidence, Assessment, Recommendation, Decision, Intervention, Action e Outcome. Não há score, KPI inventado, write, LLM, chat persistente, áudio ou execução automática.
+
+### Product Wiring + Executive Home V1 — hardening AUDIT → FIX
+
+Após a auditoria, o PR #12 permanece em `AUDIT → FIX`. O hardening filtra a seção de Leituras Organizacionais pela coleção explícita de status `open`/`under_investigation` e alinha Actions próximas à janela do Bee Runtime: `dueAt` existente, sem `completedAt` e `dueAt <= now + 24h`. O detalhe agora reconstrói a linha Reading → Outcome somente por relações presentes no `BeeRuntimeReadModel`, exibindo ausência quando um elo não existe.
+
+Os atalhos de módulos sem rota real foram omitidos, sem criar rotas fake. O wiring de população autorizada de equipe do gestor continua pendente: **Manager/team authorized population wiring pending**. Esse gap será tratado com a conexão da estrutura de pessoas, equipes e módulos clássicos de DHO.
+
+### Final chain hardening — Decision → Intervention
+
+Após a auditoria do head `2c9a99f9662b89d36662bb919e697dede5a36a2a`, o detail chain foi corrigido para resolver Decision → Intervention pela relação oficial `BeeDecisionNode.interventionIds`. A implementação não usa `BeeInterventionNode.decisionId` como fonte principal, pois o contrato real do Runtime mantém esse campo nulo. A fixture agora reproduz o contrato real e o PR permanece em `AUDIT → FIX`.
+
+### Downstream chain hardening — Intervention → Action → Outcome
+
+Após a auditoria do head `9fd0e4ffb64c008c62d22c8f3c2f1e5ff49864e2`, o detail chain passou a resolver Action explicitamente ligada à Intervention por `action.interventionId`, depois Outcome por `outcome.actionId` e, como fallback explícito, `outcome.interventionId`. A ordem mantém a seleção atual quando aplicável e não infere elos por título, escopo, datas ou proximidade. O estado permanece `AUDIT → FIX`.
+
+### Full selectable-finding chain hardening — AUDIT → FIX
+
+Após a auditoria do head `be0f25ce1b36f41ee8d4ad211a2717d0feff72b2`, o `buildDetailChain` passou a resolver Recommendation por Reading e Assessment quando os links explícitos existirem, e Decision por Intervention em aberturas de Action/Outcome mesmo sem Recommendation. O downstream continua usando somente `interventionId`, `actionId` e `interventionId` de Outcome. O PR permanece `AUDIT → FIX`.
+
+## Product Wiring + Executive Home V1 — IMPLEMENTADO + AUDITADO → READY FOR STAGING
+
+### Fechamento de governança
+
+A auditoria técnica final do Dodo foi concluída com sucesso no head `8bf3f2d9b2f93b256a21e5223a47186418ab7b1a`. O PR #12 está tecnicamente aprovado e classificado como **IMPLEMENTADO + AUDITADO → READY FOR STAGING**.
+
+- Build #239 (`pull_request`): PASS.
+- Testes Bee Runtime + Executive Home/Product Wiring: PASS.
+- Não há bug conhecido bloqueante no escopo do PR #12.
+- `bee-runtime.ts` permaneceu congelado; não houve mudança nas sete suítes SQL nem migrations.
+- PR #11 continua congelado em `25e5fff0540ab460ce16fededbc47b2e1e71e91f`.
+- `Manager/team authorized population wiring pending` continua gap conhecido, não bloqueante para o PR #12.
+- SQL/RLS autenticado de staging das fundações continua pendente antes de `READY FOR MERGE`.
+- `READY FOR STAGING` não significa `READY FOR MERGE`.
+
+Este é o fechamento documental do PR #12. Não houve merge, deploy, alteração de main, staging ou produção.

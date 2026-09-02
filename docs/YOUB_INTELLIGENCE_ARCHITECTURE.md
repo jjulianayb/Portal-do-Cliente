@@ -123,3 +123,46 @@ As funções de explicação preservam linguagem epistemicamente segura: hipóte
 ### Estado da entrega
 
 Bee Runtime V1 está em `READY FOR STAGING` após código, testes verificáveis e Build/typecheck. Isso não é `READY FOR MERGE`. PR #10 permanece `READY FOR STAGING`, congelado no head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e`; não há migration e SQL/RLS runtime autenticado continua pendente.
+
+## Product Wiring + Executive Home V1
+
+A experiência de Home executiva é um consumidor do Bee Runtime V1, não um novo engine. A rota `/executive` carrega uma vez o read model autorizado e deriva dele o resumo executivo, as prioridades, listas de exceção e o detalhe estruturado. O detalhe chama `explainReading` e `explainRecommendation`, preservando a cadeia Reading → Hypothesis → Evidence → Evidence Assessment → Recommendation → Decision → Intervention → Action → Outcome.
+
+A Home usa `attentionToday` sem recalcular epistemologia, causalidade ou score na UI. Cards exibem regra de prioridade, resumo, status, evidence state quando disponível, data e CTA de aprofundamento. Empty, loading e error states não confundem ausência autorizada com execução ou decisão.
+
+Para papéis organizacionais, o contexto é montado com escopos explícitos e os resultados continuam subordinados ao RLS. Para colaborador, a rota não exibe Home de inteligência organizacional e encaminha para a experiência pessoal já existente. Quick actions chamam intents determinísticos do Runtime; não há write, chat persistente, LLM ou audit log de consulta.
+
+
+### Estado da entrega
+
+Product Wiring + Executive Home V1 está em `AUDIT` após código, Build e testes. PR #11 permanece `READY FOR STAGING`, congelado no head `25e5fff0540ab460ce16fededbc47b2e1e71e91f`. Esta entrega não é `READY FOR STAGING` nem `READY FOR MERGE`; não há migration nem validação de staging.
+
+## Product Wiring + Executive Home V1 — hardening
+
+O wiring de Home mantém o Bee Runtime como fonte autorizada. A coleção de Readings abertas é derivada por `listOpenReadings` e não trata status resolvido ou arquivado como aberto. A coleção de Actions próximas usa janela explícita de 24 horas, incluindo vencidas e excluindo futuras distantes, sem alterar o Runtime congelado.
+
+O detail expõe a cadeia somente quando cada relação está presente no `BeeRuntimeReadModel`: Reading, Hypothesis, Evidence, Evidence Assessment, Recommendation, Decision, Intervention, Action e Outcome. Nenhum elo é inventado. Recommendation, Decision, Action e Outcome permanecem semanticamente distintos e com linguagem segura.
+
+Não existem rotas reais verificadas para os atalhos Pessoas, Avaliações, PDI e desenvolvimento ou Relatórios no mockup atual; por isso os cards foram omitidos. Gap registrado: **Manager/team authorized population wiring pending**. A população autorizada de equipe do gestor será conectada com a estrutura de pessoas/equipes em entrega posterior.
+
+O estado desta correção permanece `AUDIT → FIX`; não é `READY FOR STAGING`.
+
+### Correção de relação Decision → Intervention
+
+O Product Wiring resolve Decision → Intervention somente a partir de `BeeDecisionNode.interventionIds`, que é a relação explícita preenchida no read model real. `BeeInterventionNode.decisionId` pode permanecer nulo e não é tratado como fonte principal. A cadeia continua read-only, sem alteração do Runtime congelado.
+
+### Continuação explícita da cadeia downstream
+
+O detail da Home resolve Intervention → Action → Outcome somente por IDs presentes no `BeeRuntimeReadModel`. A Action é localizada por `action.interventionId`; o Outcome é localizado primeiro por `outcome.actionId` e depois por `outcome.interventionId` quando não houver Outcome ligado à Action. Ausência de relação permanece ausência, sem inferência ou nova epistemologia.
+
+### Resolver para todos os findings selecionáveis
+
+O detail da Home agora inicia a reconstrução a partir de Reading, Assessment, Recommendation, Decision, Action ou Outcome. As relações upstream/downstream são limitadas às chaves explícitas do read model: `linkedReadingIds`, `linkedAssessmentIds`, `recommendationId`, `interventionIds`, `interventionId` e `actionId`. Não há inferência por título, escopo, data, status ou posição. O Runtime congelado não foi alterado.
+
+## Product Wiring + Executive Home V1 — estado final auditado
+
+A auditoria técnica final do Dodo foi concluída com sucesso no head `8bf3f2d9b2f93b256a21e5223a47186418ab7b1a`. O PR #12 está **IMPLEMENTADO + AUDITADO → READY FOR STAGING**. O Build #239 (`pull_request`) e os testes Bee Runtime + Executive Home/Product Wiring passaram; não há bug conhecido bloqueante no escopo desta entrega.
+
+`bee-runtime.ts` permaneceu congelado, assim como as sete suítes SQL. Não foram criadas migrations. PR #11 continua congelado no head `25e5fff0540ab460ce16fededbc47b2e1e71e91f`. `Manager/team authorized population wiring pending` segue como gap conhecido e não bloqueante do PR #12.
+
+A execução autenticada de SQL/RLS das fundações em staging continua pendente antes de qualquer `READY FOR MERGE`. `READY FOR STAGING` não significa `READY FOR MERGE`. Este fechamento é documental: não houve merge, deploy, alteração da main, staging ou produção.

@@ -98,3 +98,57 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - O Runtime é um compositor read-only que depende do RLS e dos helpers existentes como primeira barreira. Contexto, escopos, papel, população, sensitivity e purpose são explícitos; a camada TypeScript pode restringir, mas nunca ampliar, a autorização.
 - `attention_today` usa regras determinísticas e transparentes, sem score opaco. Explicações preservam provenance, unknowns e limitations e diferenciam FACT, READING, HYPOTHESIS, EVIDENCE, RECOMMENDATION, DECISION, INTERVENTION, ACTION e OUTCOME.
 - Nenhum prompt bruto, conversa, chain-of-thought, write, trigger, execução ou evento de consulta é criado nesta entrega.
+
+## Product Wiring + Executive Home V1
+
+- PR #11 permanece `READY FOR STAGING`, congelado no head `25e5fff0540ab460ce16fededbc47b2e1e71e91f`; não alterar salvo bug real comprovado.
+- Product Wiring + Executive Home V1 está em `AUDIT` na branch `feature/product-wiring-executive-home-v1`, criada exatamente do head do PR #11. Código + Build + testes foram concluídos; não promover automaticamente para `READY FOR STAGING`.
+- A Home executiva usa o Bee Runtime como fonte estruturada para `attentionToday`, Readings, Recommendations, Decisions, Actions e Outcomes. O detalhe usa os contratos de explainability existentes.
+- A UI não cria autorização paralela: o runtime continua primeira fonte autorizada via RLS, e a camada visual só reduz conteúdo. Colaborador permanece na experiência pessoal existente.
+- Não há novos contratos SQL, migrations, writes, LLM, chat persistente, áudio, score ou redesign completo.
+
+## Product Wiring + Executive Home V1 — hardening após auditoria
+
+- PR #12 permanece `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
+- `openReadings` usa a coleção autorizada de `listOpenReadings`, com status somente `open` ou `under_investigation`; count, lista e empty state usam a mesma coleção.
+- Actions próximas usam a mesma semântica do Bee Runtime V1: `dueAt` existente, sem `completedAt` e janela inclusiva de até 24 horas a partir de `now` explícito.
+- A linha da decisão e execução do detail percorre somente links explícitos existentes no read model. Elo ausente é exibido como ausência; não há relação inferida.
+- Atalhos sem rotas reais foram omitidos. Nenhuma rota de módulo foi inventada.
+- Gap conhecido: **Manager/team authorized population wiring pending**. Não criar scope de equipe artificial neste PR.
+- `bee-runtime.ts`, as sete suítes SQL, migrations, `main` e PR #11 permanecem inalterados.
+
+## Último fix auditado — Decision → Intervention
+
+- `buildDetailChain` passa a localizar Intervention por `decision.interventionIds`, conforme o contrato real do Bee Runtime V1.
+- `BeeInterventionNode.decisionId` permanece nulo na fixture e não é usado como fonte principal.
+- Foi adicionado teste específico para Decision com `interventionIds = ["int-a"]` encontrar a Intervention correspondente.
+- PR #12 continua `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
+
+## Último fix auditado — continuação downstream
+
+- Após resolver `resolvedIntervention`, `buildDetailChain` deriva `resolvedAction` nesta ordem: Action selecionada; Action apontada por `selectedOutcome.actionId`; Action com `interventionId` igual à Intervention resolvida.
+- `resolvedOutcome` usa nesta ordem: Outcome selecionado; Outcome com `actionId` igual à Action resolvida; Outcome com `interventionId` igual à Intervention resolvida.
+- Teste reproduz Decision → Intervention → Action → Outcome e confirma que Intervention sem Action relacionada não cria Action nem Outcome.
+- PR #12 permanece `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
+
+## Último fix auditado — cadeia para todos os findings selecionáveis
+
+- Reading selecionada busca Recommendation por `reading.recommendations` ou `recommendation.linkedReadingIds`.
+- Assessment selecionado busca Recommendation por `recommendation.linkedAssessmentIds`.
+- Action/Outcome selecionados podem subir até Decision por `decision.interventionIds`, mesmo quando Intervention não possui Recommendation nem Decision reversa.
+- Action e Outcome continuam sendo derivados apenas por IDs explícitos.
+- Testes cobrem Reading, Assessment, Action e Outcome selecionados, além de ausência sem inferência.
+- PR #12 permanece `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
+
+## Product Wiring + Executive Home V1 — fechamento de governança
+
+- Auditoria técnica final concluída com sucesso no head `8bf3f2d9b2f93b256a21e5223a47186418ab7b1a`.
+- PR #12 tecnicamente aprovado: **IMPLEMENTADO + AUDITADO → READY FOR STAGING**.
+- Build #239 (`pull_request`) passou; testes Bee Runtime + Executive Home/Product Wiring passaram.
+- Não há bug conhecido bloqueante no escopo do PR #12.
+- `bee-runtime.ts` permaneceu congelado; SQL e migrations permaneceram inalterados.
+- PR #11 permanece congelado em `25e5fff0540ab460ce16fededbc47b2e1e71e91f`.
+- `Manager/team authorized population wiring pending` permanece gap conhecido e não bloqueante do PR #12.
+- A execução autenticada de SQL/RLS das fundações em staging continua pendente antes de `READY FOR MERGE`.
+- `READY FOR STAGING` não significa `READY FOR MERGE`; não houve merge nem publicação.
+- Este commit sincroniza somente a documentação oficial do estado final.
