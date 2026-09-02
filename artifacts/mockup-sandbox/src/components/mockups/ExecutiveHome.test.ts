@@ -68,3 +68,22 @@ test("Decision.interventionIds resolves Intervention when intervention.decisionI
   assert.deepEqual(chain.decision.map((item) => item.finding.id), ["decision-only"]);
   assert.deepEqual(chain.intervention.map((item) => item.finding.id), ["int-from-decision"]);
 });
+
+test("Decision chain continues through explicit Intervention → Action → Outcome links", () => {
+  const decisionFinding = finding("decision-downstream", "DECISION", "pending_review");
+  const interventionFinding = finding("int-a", "INTERVENTION", "draft");
+  const actionFinding = finding("action-a", "ACTION", "in_progress");
+  const outcomeFinding = finding("outcome-a", "OUTCOME", "observed");
+  const decision = { finding: decisionFinding, recommendationId: null, revisionIds: [], interventionIds: ["int-a"] } as never;
+  const intervention = { finding: interventionFinding, recommendationId: null, decisionId: null } as never;
+  const action = { finding: actionFinding, interventionId: "int-a", dueAt: null, completedAt: null } as never;
+  const outcome = { finding: outcomeFinding, interventionId: "int-a", actionId: "action-a", validationStatus: "unvalidated" } as never;
+  const chain = buildDetailChain(model({ decisions: [decision], interventions: [intervention], actions: [action], outcomes: [outcome] }), decisionFinding);
+  assert.deepEqual(chain.decision.map((item) => item.finding.id), ["decision-downstream"]);
+  assert.deepEqual(chain.intervention.map((item) => item.finding.id), ["int-a"]);
+  assert.deepEqual(chain.action.map((item) => item.finding.id), ["action-a"]);
+  assert.deepEqual(chain.outcome.map((item) => item.finding.id), ["outcome-a"]);
+  const withoutAction = buildDetailChain(model({ decisions: [decision], interventions: [intervention], outcomes: [outcome] }), decisionFinding);
+  assert.deepEqual(withoutAction.action, []);
+  assert.deepEqual(withoutAction.outcome, []);
+});
