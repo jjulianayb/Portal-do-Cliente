@@ -98,3 +98,9 @@ O Runtime não cria, altera ou executa qualquer entidade. Não usa LLM, ML, scor
 A nova branch `feature/product-wiring-executive-home-v1` parte exatamente do head `25e5fff0540ab460ce16fededbc47b2e1e71e91f` do PR #11, que permanece `READY FOR STAGING`. Esta entrega conecta o Bee Runtime à experiência visível da plataforma em uma Home executiva orientada a exceções, sem duplicar entidades ou reconstruir módulos antigos. Código, Build e testes foram concluídos; o estado atual é `AUDIT`. Não promover automaticamente para `READY FOR STAGING` antes da auditoria.
 
 A Home utiliza `attentionToday`, o read model e os handlers determinísticos do Bee Runtime. A experiência preserva Reading, Hypothesis, Evidence, Assessment, Recommendation, Decision, Intervention, Action e Outcome. Não há score, KPI inventado, write, LLM, chat persistente, áudio ou execução automática.
+
+### Product Wiring + Executive Home V1 — hardening AUDIT → FIX
+
+Após a auditoria, o PR #12 permanece em `AUDIT → FIX`. O hardening filtra a seção de Leituras Organizacionais pela coleção explícita de status `open`/`under_investigation` e alinha Actions próximas à janela do Bee Runtime: `dueAt` existente, sem `completedAt` e `dueAt <= now + 24h`. O detalhe agora reconstrói a linha Reading → Outcome somente por relações presentes no `BeeRuntimeReadModel`, exibindo ausência quando um elo não existe.
+
+Os atalhos de módulos sem rota real foram omitidos, sem criar rotas fake. O wiring de população autorizada de equipe do gestor continua pendente: **Manager/team authorized population wiring pending**. Esse gap será tratado com a conexão da estrutura de pessoas, equipes e módulos clássicos de DHO.
