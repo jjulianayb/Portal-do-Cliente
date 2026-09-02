@@ -38,7 +38,7 @@ export type KnowledgeSource = { id: string; organization_id: string; source_type
 export type KnowledgeDocument = { id: string; organization_id: string; knowledge_source_id?: string | null; document_type: string; title: string; version: string; status: KnowledgeDocumentStatus; valid_from?: string | null; valid_until?: string | null; content?: string | null; storage_path?: string | null; access_level: KnowledgeAccessLevel; owner_user_id?: string | null; };
 
 
-export type OrganizationalMemoryEntityType = "fact" | "declaration" | "reading" | "hypothesis" | "decision" | "intervention" | "outcome" | "employee" | "area" | "position" | "unit" | "organization" | "feedback" | "checkin" | "pdi" | "assessment" | "recommendation" | "action" | "event";
+export type OrganizationalMemoryEntityType = "fact" | "declaration" | "reading" | "hypothesis" | "decision" | "intervention" | "outcome" | "employee" | "area" | "position" | "unit" | "organization" | "feedback" | "checkin" | "pdi" | "assessment" | "recommendation" | "action" | "event" | "evidence_assessment";
 export type OrganizationalMemoryRelationshipType = "supports" | "contradicts" | "derived_from" | "declares" | "observes" | "concerns" | "manages" | "belongs_to" | "affects" | "led_to" | "requires" | "related_to";
 export type OrganizationalMemoryKnowledgeKind = "fact" | "declared" | "observed" | "derived" | "interpreted" | "hypothesis";
 export type OrganizationalMemorySourceType = "manual" | "system" | "service" | "bee" | "import" | "integration";
@@ -119,3 +119,17 @@ export type IntelligenceOrganizationalReadingHypothesis = {
 export type IntelligenceOrganizationalReadingRevision = {
   id: string; organization_id: string; reading_id: string; revision_number: number; changed_by_user_id: string; change_reason: string; previous_snapshot: Record<string, unknown>; new_snapshot: Record<string, unknown>; created_at: string;
 };
+
+
+export type EvidenceAssessmentStatus = "draft" | "under_investigation" | "assessed" | "archived";
+export type OperationalEvidenceState = "insufficient" | "weak" | "moderate" | "strong" | "conflicting";
+export type EvidenceAssessmentRelation = "supports" | "contradicts";
+export type IntelligenceEvidenceAssessment = { id: string; organization_id: string; reading_id: string; hypothesis_id?: string | null; status: EvidenceAssessmentStatus; evidence_state: OperationalEvidenceState; supporting_evidence_count: number; contradicting_evidence_count: number; unknowns: unknown[]; limitations: unknown[]; assessment_summary: string; assessed_by_user_id?: string | null; assessed_at?: string | null; context: Record<string, unknown>; created_at: string; updated_at: string; };
+export type IntelligenceEvidenceAssessmentEvidence = { id: string; organization_id: string; assessment_id: string; evidence_id: string; evidence_relation: EvidenceAssessmentRelation; provenance_note?: string | null; context: Record<string, unknown>; created_at: string; };
+export type IntelligenceEvidenceAssessmentRevision = { id: string; organization_id: string; assessment_id: string; revision_number: number; changed_by_user_id: string; change_reason: string; previous_snapshot: Record<string, unknown>; new_snapshot: Record<string, unknown>; created_at: string; };
+export type RecommendationEvidenceRelation = "supports" | "contradicts";
+export type IntelligenceRecommendationReading = { id: string; organization_id: string; recommendation_id: string; reading_id: string; relationship_type: "motivated_by"; context: Record<string, unknown>; created_at: string; };
+export type IntelligenceRecommendationAssessment = { id: string; organization_id: string; recommendation_id: string; assessment_id: string; relationship_type: "based_on"; context: Record<string, unknown>; created_at: string; };
+export type IntelligenceRecommendationHypothesis = { id: string; organization_id: string; recommendation_id: string; hypothesis_id: string; relationship_type: "considers"; context: Record<string, unknown>; created_at: string; };
+export type IntelligenceRecommendationEvidence = { organization_id: string; recommendation_id: string; evidence_id: string; evidence_relation: RecommendationEvidenceRelation; context: Record<string, unknown>; created_at: string; };
+export type IntelligenceRecommendationRevision = { id: string; organization_id: string; recommendation_id: string; revision_number: number; changed_by_user_id: string; change_reason: string; previous_snapshot: Record<string, unknown>; new_snapshot: Record<string, unknown>; created_at: string; };

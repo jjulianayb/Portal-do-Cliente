@@ -82,3 +82,11 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - O conceito exposto é **Leitura Organizacional**. `intelligence_signals` continua somente como nome técnico legado quando necessário; `signal/sinal` não é o conceito de produto.
 - Reading e Hypothesis são entidades epistemicamente distintas: Reading = interpretação estruturada; Hypothesis = explicação possível, sem confirmação causal automática.
 - O engine não gera Evidence, Recommendation, Decision, Intervention ou Action automaticamente e não implementa scoring, LLM, ML, diagnóstico ou UI final.
+
+## Evidence + Recommendation Operational V1
+
+- PR #9 permanece `READY FOR STAGING`, congelado no head `9a17bffa1a014ea33697345e54f0b558fc952bca`; não deve ser alterado salvo bug real comprovado.
+- Evidence + Recommendation Operational V1 está em `READY FOR STAGING` na branch `feature/evidence-recommendation-operational-v1`, após o hardening de compatibilidade do schema legado e das funções PL/pgSQL, com Build/typecheck aprovado. Isso não é `READY FOR MERGE`; SQL/RLS runtime autenticado continua pendente.
+- O contrato conecta Leitura Organizacional → Hipótese → Evidência → avaliação de suficiência → Recommendation por FKs/junctions tenant-safe e provenance explícita.
+- `insufficient`, `weak`, `moderate`, `strong` e `conflicting` não são probabilidades de causa. A ausência de evidência não é evidência negativa.
+- Recommendation é proposta e permanece distinta de Decision, Approval, Intervention, Action e Outcome. A Bee poderá explicar a cadeia futuramente, mas não deverá apresentar hipótese como fato nem Recommendation como decisão.

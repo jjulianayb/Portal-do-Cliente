@@ -88,3 +88,23 @@ Para preservar histórico, o estado corrente pode ser revisado pelo caminho cont
 ### Estado da entrega
 
 O Organizational Reading Engine V1 está em `READY FOR STAGING` após o hardening final da suíte e o Build/typecheck. Isso não é `READY FOR MERGE`; a execução SQL/RLS autenticada em staging continua pendente. PR #8 permanece `READY FOR STAGING`.
+
+## Evidence + Recommendation Operational V1
+
+Esta camada operacionaliza o trecho Leitura Organizacional → Hipótese → Evidência → Avaliação de suficiência → Recommendation, preservando a cadeia epistemológica completa. `intelligence_evidence_assessments` registra a avaliação manual/controlled de uma Reading e de uma Hypothesis opcional. Counts são resumo; relações normalizadas de evidências supporting/contradicting são a provenance autoritativa.
+
+`evidence_state` usa vocabulário fechado: `insufficient` (não sustenta Recommendation), `weak` (elementos iniciais com lacunas relevantes), `moderate` (Recommendation cautelosa possível com limitations), `strong` (suporte coerente de múltiplas fontes) e `conflicting` (evidências relevantes em direções diferentes). Nenhum estado é probabilidade de causa. `unknowns` e `limitations` são obrigatórios como arrays estruturados, e a ausência de evidência não vira evidência negativa.
+
+Recommendations existentes recebem vínculos explícitos e tenant-safe para Reading, Assessment, Hypothesis e Evidence. `intelligence_recommendation_evidence` reaproveitado é complementado com relação `supports`/`contradicts`; não há segunda Evidence Engine. A Recommendation mantém rationale, evidence_state, unknowns, alternatives, do_not_recommend, measurement_plan, approval_required, owner, scope e context. `proposed`/`accepted` com `evidence_state = insufficient` são bloqueados.
+
+Assessments e Recommendations podem ser revisados por caminho controlado com snapshots append-only, autoria, motivo e timestamp; updates autenticados diretos foram removidos para evitar reescrita silenciosa. Memory e Event Layer recebem registros somente por serviços controlados. Não há criação automática de Decision, Intervention, Action ou Outcome.
+
+
+### Estado da entrega
+
+Evidence + Recommendation Operational V1 está em `READY FOR STAGING` após os dois hardenings auditados e Build/typecheck aprovado. Isso não é `READY FOR MERGE`; PR #9 permanece `READY FOR STAGING`; SQL/RLS runtime autenticado continua pendente.
+
+
+### Compatibilidade da Recommendation Evidence
+
+A relação histórica `intelligence_recommendation_evidence` preserva a identidade composta `organization_id + recommendation_id + evidence_id` e não possui coluna sintética `id`. `evidence_relation` e `context` foram adicionados aditivamente. Portanto, a mesma Evidence não pode simultaneamente ser `supports` e `contradicts` na mesma Recommendation; essa exclusividade é intencional e coberta pela suíte. Types e service usam a identidade composta real.
