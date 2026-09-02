@@ -112,3 +112,7 @@ Após a auditoria do head `2c9a99f9662b89d36662bb919e697dede5a36a2a`, o detail c
 ### Downstream chain hardening — Intervention → Action → Outcome
 
 Após a auditoria do head `9fd0e4ffb64c008c62d22c8f3c2f1e5ff49864e2`, o detail chain passou a resolver Action explicitamente ligada à Intervention por `action.interventionId`, depois Outcome por `outcome.actionId` e, como fallback explícito, `outcome.interventionId`. A ordem mantém a seleção atual quando aplicável e não infere elos por título, escopo, datas ou proximidade. O estado permanece `AUDIT → FIX`.
+
+### Full selectable-finding chain hardening — AUDIT → FIX
+
+Após a auditoria do head `be0f25ce1b36f41ee8d4ad211a2717d0feff72b2`, o `buildDetailChain` passou a resolver Recommendation por Reading e Assessment quando os links explícitos existirem, e Decision por Intervention em aberturas de Action/Outcome mesmo sem Recommendation. O downstream continua usando somente `interventionId`, `actionId` e `interventionId` de Outcome. O PR permanece `AUDIT → FIX`.
