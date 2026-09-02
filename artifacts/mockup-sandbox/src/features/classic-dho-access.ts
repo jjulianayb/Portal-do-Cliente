@@ -45,5 +45,8 @@ export function feedbackRelationFilter(employeeIds: readonly string[]): string {
 }
 
 export function relatedQueryFilters(context: ClassicDhoQueryContext, field: string, employeeIds: readonly string[]): string {
-  return classicPopulationMode(context) === "organization" ? "" : employeeRelationFilter(field, employeeIds);
+  const mode = classicPopulationMode(context);
+  if (mode === "organization") return "";
+  if (mode === "direct_reports" || mode === "self") return employeeRelationFilter(field, employeeIds);
+  return `id=eq.${EMPTY_UUID}`;
 }
