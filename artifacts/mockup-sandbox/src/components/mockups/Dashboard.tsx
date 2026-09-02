@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 
 import type { SupabaseSession } from "../../lib/supabase";
-import { employeeQueryFilters, feedbackRelationFilter, relatedQueryFilters } from "../../features/classic-dho-access";
+import { EMPTY_UUID, employeeQueryFilters, feedbackRelationFilter, relatedQueryFilters } from "../../features/classic-dho-access";
 
 type Organization = { id: string; name: string; slug: string };
 type UserRole = "admin_youb" | "diretoria" | "rh" | "gestor" | "colaborador";
@@ -163,18 +163,21 @@ export default function Dashboard({ session, organization, onLogout }: Dashboard
       const employeeRows = await apiRequest<Employee[]>(session, `employees?select=id,full_name,email,area_id,position_id,seniority,manager_employee_id&organization_id=eq.${org}&${employeeFilters}&order=full_name`);
       const employeeIds = employeeRows.map((employee) => employee.id);
       const employeeScope = (field: string) => relatedQueryFilters(queryContext, field, employeeIds);
-      const feedbackScope = role === "admin_youb" || role === "rh" || role === "diretoria" ? "" : feedbackRelationFilter(employeeIds);
-      const actionScope = role === "admin_youb" || role === "rh" || role === "diretoria" ? "" : employeeScope("employee_id");
+      const hasOrganizationPopulation = role === "admin_youb" || role === "rh";
+      const sensitiveScope = hasOrganizationPopulation ? "" : role === "diretoria" ? `id=eq.${EMPTY_UUID}` : employeeScope("employee_id");
+      const feedbackScope = hasOrganizationPopulation ? "" : role === "diretoria" ? `id=eq.${EMPTY_UUID}` : feedbackRelationFilter(employeeIds);
+      const actionScope = hasOrganizationPopulation ? "" : role === "diretoria" ? `id=eq.${EMPTY_UUID}` : employeeScope("employee_id");
+      const assessmentScope = role === "diretoria" ? "" : employeeScope("subject_employee_id");
       const [areaRows, positionRows, cycleRows, feedbackRows, pdiRows, assessmentRows, disciplinaryRows, policyRows, checkinRows, approverRows] = await Promise.all([
         apiRequest<Area[]>(session, `areas?select=id,name&organization_id=eq.${org}&order=name`),
         apiRequest<Position[]>(session, `positions?select=id,name,level&organization_id=eq.${org}&order=name`),
         apiRequest<Cycle[]>(session, `cycles?select=id,name,starts_at,ends_at,status&organization_id=eq.${org}&order=created_at.desc`),
         apiRequest<Feedback[]>(session, `feedbacks?select=id,content,visibility,created_at,target_employee_id,author_employee_id&organization_id=eq.${org}${feedbackScope ? `&${feedbackScope}` : ""}&order=created_at.desc`),
-        apiRequest<Pdi[]>(session, `pdis?select=id,objective,status,due_date,employee_id,created_at&organization_id=eq.${org}${employeeScope("employee_id") ? `&${employeeScope("employee_id")}` : ""}&order=created_at.desc`),
-        apiRequest<Assessment[]>(session, `assessments?select=id,subject_employee_id,cycle_id,created_at&organization_id=eq.${org}${employeeScope("subject_employee_id") ? `&${employeeScope("subject_employee_id")}` : ""}&order=created_at.desc`),
+        apiRequest<Pdi[]>(session, `pdis?select=id,objective,status,due_date,employee_id,created_at&organization_id=eq.${org}${sensitiveScope ? `&${sensitiveScope}` : ""}&order=created_at.desc`),
+        apiRequest<Assessment[]>(session, `assessments?select=id,subject_employee_id,cycle_id,created_at&organization_id=eq.${org}${assessmentScope ? `&${assessmentScope}` : ""}&order=created_at.desc`),
         apiRequest<DisciplinaryAction[]>(session, `disciplinary_actions?select=id,employee_id,policy_id,action_type,reason,notes,approval_status,applied_at,created_at&organization_id=eq.${org}${actionScope ? `&${actionScope}` : ""}&order=applied_at.desc,created_at.desc`),
         apiRequest<DisciplinaryPolicy[]>(session, `disciplinary_policies?select=id,name,description,requires_intermediate_approval,intermediate_approver_label,requires_hr_approval,active,sequence_order&organization_id=eq.${org}&active=eq.true&order=sequence_order,name`),
-        apiRequest<Checkin[]>(session, `checkins?select=id,employee_id,checkin_date,mood,engagement,energy,workload,note,created_at&organization_id=eq.${org}${employeeScope("employee_id") ? `&${employeeScope("employee_id")}` : ""}&order=checkin_date.desc,created_at.desc&limit=100`),
+        apiRequest<Checkin[]>(session, `checkins?select=id,employee_id,checkin_date,mood,engagement,energy,workload,note,created_at&organization_id=eq.${org}${sensitiveScope ? `&${sensitiveScope}` : ""}&order=checkin_date.desc,created_at.desc&limit=100`),
         apiRequest<OrganizationApprover[]>(session, `organization_approvers?select=id,approver_label,email,active&organization_id=eq.${org}&order=active.desc,approver_label,email`),
       ]);
       setEmployees(employeeRows);
