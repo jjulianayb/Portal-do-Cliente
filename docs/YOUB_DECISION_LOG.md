@@ -94,7 +94,7 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 ## Bee Runtime V1
 
 - PR #10 permanece `READY FOR STAGING`, congelado no head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e`; não deve ser alterado salvo bug real comprovado.
-- Bee Runtime V1 está em `AUDIT` na branch `feature/bee-runtime-v1`, criada exatamente do head do PR #10. Código e Build/typecheck foram concluídos; não promover automaticamente para `READY FOR STAGING`. SQL/RLS runtime autenticado continua pendente.
+- Bee Runtime V1 está em `READY FOR STAGING` na branch `feature/bee-runtime-v1`, criada exatamente do head do PR #10. Código, testes verificáveis e Build/typecheck foram concluídos. Isso não é `READY FOR MERGE`; SQL/RLS runtime autenticado continua pendente.
 - O Runtime é um compositor read-only que depende do RLS e dos helpers existentes como primeira barreira. Contexto, escopos, papel, população, sensitivity e purpose são explícitos; a camada TypeScript pode restringir, mas nunca ampliar, a autorização.
 - `attention_today` usa regras determinísticas e transparentes, sem score opaco. Explicações preservam provenance, unknowns e limitations e diferenciam FACT, READING, HYPOTHESIS, EVIDENCE, RECOMMENDATION, DECISION, INTERVENTION, ACTION e OUTCOME.
 - Nenhum prompt bruto, conversa, chain-of-thought, write, trigger, execução ou evento de consulta é criado nesta entrega.
