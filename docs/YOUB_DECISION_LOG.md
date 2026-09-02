@@ -106,3 +106,13 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - A Home executiva usa o Bee Runtime como fonte estruturada para `attentionToday`, Readings, Recommendations, Decisions, Actions e Outcomes. O detalhe usa os contratos de explainability existentes.
 - A UI não cria autorização paralela: o runtime continua primeira fonte autorizada via RLS, e a camada visual só reduz conteúdo. Colaborador permanece na experiência pessoal existente.
 - Não há novos contratos SQL, migrations, writes, LLM, chat persistente, áudio, score ou redesign completo.
+
+## Product Wiring + Executive Home V1 — hardening após auditoria
+
+- PR #12 permanece `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
+- `openReadings` usa a coleção autorizada de `listOpenReadings`, com status somente `open` ou `under_investigation`; count, lista e empty state usam a mesma coleção.
+- Actions próximas usam a mesma semântica do Bee Runtime V1: `dueAt` existente, sem `completedAt` e janela inclusiva de até 24 horas a partir de `now` explícito.
+- A linha da decisão e execução do detail percorre somente links explícitos existentes no read model. Elo ausente é exibido como ausência; não há relação inferida.
+- Atalhos sem rotas reais foram omitidos. Nenhuma rota de módulo foi inventada.
+- Gap conhecido: **Manager/team authorized population wiring pending**. Não criar scope de equipe artificial neste PR.
+- `bee-runtime.ts`, as sete suítes SQL, migrations, `main` e PR #11 permanecem inalterados.
