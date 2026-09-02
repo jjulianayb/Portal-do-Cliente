@@ -104,3 +104,7 @@ A Home utiliza `attentionToday`, o read model e os handlers determinísticos do 
 Após a auditoria, o PR #12 permanece em `AUDIT → FIX`. O hardening filtra a seção de Leituras Organizacionais pela coleção explícita de status `open`/`under_investigation` e alinha Actions próximas à janela do Bee Runtime: `dueAt` existente, sem `completedAt` e `dueAt <= now + 24h`. O detalhe agora reconstrói a linha Reading → Outcome somente por relações presentes no `BeeRuntimeReadModel`, exibindo ausência quando um elo não existe.
 
 Os atalhos de módulos sem rota real foram omitidos, sem criar rotas fake. O wiring de população autorizada de equipe do gestor continua pendente: **Manager/team authorized population wiring pending**. Esse gap será tratado com a conexão da estrutura de pessoas, equipes e módulos clássicos de DHO.
+
+### Final chain hardening — Decision → Intervention
+
+Após a auditoria do head `2c9a99f9662b89d36662bb919e697dede5a36a2a`, o detail chain foi corrigido para resolver Decision → Intervention pela relação oficial `BeeDecisionNode.interventionIds`. A implementação não usa `BeeInterventionNode.decisionId` como fonte principal, pois o contrato real do Runtime mantém esse campo nulo. A fixture agora reproduz o contrato real e o PR permanece em `AUDIT → FIX`.
