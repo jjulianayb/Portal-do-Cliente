@@ -123,3 +123,10 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - `BeeInterventionNode.decisionId` permanece nulo na fixture e não é usado como fonte principal.
 - Foi adicionado teste específico para Decision com `interventionIds = ["int-a"]` encontrar a Intervention correspondente.
 - PR #12 continua `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
+
+## Último fix auditado — continuação downstream
+
+- Após resolver `resolvedIntervention`, `buildDetailChain` deriva `resolvedAction` nesta ordem: Action selecionada; Action apontada por `selectedOutcome.actionId`; Action com `interventionId` igual à Intervention resolvida.
+- `resolvedOutcome` usa nesta ordem: Outcome selecionado; Outcome com `actionId` igual à Action resolvida; Outcome com `interventionId` igual à Intervention resolvida.
+- Teste reproduz Decision → Intervention → Action → Outcome e confirma que Intervention sem Action relacionada não cria Action nem Outcome.
+- PR #12 permanece `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
