@@ -158,3 +158,11 @@ O detail da Home resolve Intervention → Action → Outcome somente por IDs pre
 ### Resolver para todos os findings selecionáveis
 
 O detail da Home agora inicia a reconstrução a partir de Reading, Assessment, Recommendation, Decision, Action ou Outcome. As relações upstream/downstream são limitadas às chaves explícitas do read model: `linkedReadingIds`, `linkedAssessmentIds`, `recommendationId`, `interventionIds`, `interventionId` e `actionId`. Não há inferência por título, escopo, data, status ou posição. O Runtime congelado não foi alterado.
+
+## Product Wiring + Executive Home V1 — estado final auditado
+
+A auditoria técnica final do Dodo foi concluída com sucesso no head `8bf3f2d9b2f93b256a21e5223a47186418ab7b1a`. O PR #12 está **IMPLEMENTADO + AUDITADO → READY FOR STAGING**. O Build #239 (`pull_request`) e os testes Bee Runtime + Executive Home/Product Wiring passaram; não há bug conhecido bloqueante no escopo desta entrega.
+
+`bee-runtime.ts` permaneceu congelado, assim como as sete suítes SQL. Não foram criadas migrations. PR #11 continua congelado no head `25e5fff0540ab460ce16fededbc47b2e1e71e91f`. `Manager/team authorized population wiring pending` segue como gap conhecido e não bloqueante do PR #12.
+
+A execução autenticada de SQL/RLS das fundações em staging continua pendente antes de qualquer `READY FOR MERGE`. `READY FOR STAGING` não significa `READY FOR MERGE`. Este fechamento é documental: não houve merge, deploy, alteração da main, staging ou produção.
