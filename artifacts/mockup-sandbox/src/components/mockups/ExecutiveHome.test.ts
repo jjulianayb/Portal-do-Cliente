@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildDetailChain, buildExecutiveSnapshot, getNavigableHomeModules, listDueActionsForHome, listOpenReadingsForHome, roleCanSeeExecutiveHome } from "./ExecutiveHome";
-import type { BeeAttentionItem, BeeRuntimeReadModel } from "../../features/intelligence-core/bee-runtime";
+import { buildBeeAttentionToday, type BeeAttentionItem, type BeeRuntimeReadModel } from "../../features/intelligence-core/bee-runtime";
 
 const finding = (id: string, kind: BeeAttentionItem["finding"]["kind"], status = "open") => ({ id, kind, organizationId: "org-a", scope: { type: "organization", ref: "org-a" }, title: id, summary: id, status, knowledgeKind: "declared", unknowns: [], limitations: [], provenance: [{ entityType: kind, entityId: id }], sensitivity: null, timestamps: {}, links: [] }) as never;
 const model = (overrides: Partial<BeeRuntimeReadModel> = {}): BeeRuntimeReadModel => ({ context: { organizationId: "org-a", userId: "user-a", role: "diretoria", employeeId: null, purpose: "executive_home" }, readings: [], assessments: [], recommendations: [], decisions: [], interventions: [], actions: [], outcomes: [], memory: [], events: [], attentionToday: [], ...overrides });
@@ -28,8 +28,8 @@ test("due actions match the Runtime 24-hour window", () => {
 test("role, limit and module navigation remain guarded", () => {
   assert.equal(roleCanSeeExecutiveHome("colaborador"), false);
   assert.equal(roleCanSeeExecutiveHome("diretoria"), true);
-  const five = Array.from({ length: 6 }, (_, index) => ({ rule: "decision_pending", finding: finding(`p-${index}`, "DECISION"), explanation: "" })) as never;
-  assert.equal(model({ attentionToday: five }).attentionToday.slice(0, 5).length, 5);
+  const five = Array.from({ length: 6 }, (_, index) => ({ finding: finding(`p-${index}`, "ACTION", "in_progress"), dueAt: "2026-09-02T01:00:00Z", completedAt: null })) as never;
+  assert.equal(buildBeeAttentionToday({} as never, model({ actions: five }), 5, new Date("2026-09-02T00:00:00Z")).length, 5);
   assert.deepEqual(getNavigableHomeModules([{ label: "Pessoas", path: null }, { label: "Avaliações", path: "/avaliacoes" }]), [{ label: "Avaliações", path: "/avaliacoes" }]);
   assert.deepEqual(getNavigableHomeModules(), []);
 });
