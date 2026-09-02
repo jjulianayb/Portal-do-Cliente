@@ -130,3 +130,12 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - `resolvedOutcome` usa nesta ordem: Outcome selecionado; Outcome com `actionId` igual à Action resolvida; Outcome com `interventionId` igual à Intervention resolvida.
 - Teste reproduz Decision → Intervention → Action → Outcome e confirma que Intervention sem Action relacionada não cria Action nem Outcome.
 - PR #12 permanece `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
+
+## Último fix auditado — cadeia para todos os findings selecionáveis
+
+- Reading selecionada busca Recommendation por `reading.recommendations` ou `recommendation.linkedReadingIds`.
+- Assessment selecionado busca Recommendation por `recommendation.linkedAssessmentIds`.
+- Action/Outcome selecionados podem subir até Decision por `decision.interventionIds`, mesmo quando Intervention não possui Recommendation nem Decision reversa.
+- Action e Outcome continuam sendo derivados apenas por IDs explícitos.
+- Testes cobrem Reading, Assessment, Action e Outcome selecionados, além de ausência sem inferência.
+- PR #12 permanece `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
