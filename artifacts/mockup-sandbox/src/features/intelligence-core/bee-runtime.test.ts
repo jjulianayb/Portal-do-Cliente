@@ -7,7 +7,7 @@ const model = (): BeeRuntimeReadModel => {
   const hypothesis = finding("HYPOTHESIS", "hyp-a", "Mudança de liderança pode estar relacionada");
   const readingFinding = finding("READING", "reading-a", "Movimento de risco na organização");
   const assessmentFinding = finding("ASSESSMENT", "assessment-a", "Evidências em direções diferentes", "assessed", "conflicting");
-  return { context: { organizationId: "org-a", userId: "user-a", role: "diretoria", employeeId: null, purpose: "review" }, readings: [{ finding: readingFinding, hypotheses: [hypothesis], sources: [], evidence: [], assessments: [{ finding: assessmentFinding, supportingEvidence: [], contradictingEvidence: [] }], recommendations: [], decisions: [] }], assessments: [{ finding: assessmentFinding, supportingEvidence: [], contradictingEvidence: [] }], recommendations: [], decisions: [], actions: [], outcomes: [], memory: [], events: [], attentionToday: [] };
+  return { context: { organizationId: "org-a", userId: "user-a", role: "diretoria", employeeId: null, purpose: "review" }, readings: [{ finding: readingFinding, readingType: "risk", hypotheses: [hypothesis], sources: [], evidence: [], assessments: [{ finding: assessmentFinding, supportingEvidence: [], contradictingEvidence: [] }], recommendations: [], decisions: [] }], assessments: [{ finding: assessmentFinding, supportingEvidence: [], contradictingEvidence: [] }], recommendations: [], decisions: [], actions: [], outcomes: [], memory: [], events: [], attentionToday: [] };
 };
 
 test("Bee intents are deterministic and closed", () => {
