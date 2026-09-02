@@ -108,3 +108,7 @@ Os atalhos de módulos sem rota real foram omitidos, sem criar rotas fake. O wir
 ### Final chain hardening — Decision → Intervention
 
 Após a auditoria do head `2c9a99f9662b89d36662bb919e697dede5a36a2a`, o detail chain foi corrigido para resolver Decision → Intervention pela relação oficial `BeeDecisionNode.interventionIds`. A implementação não usa `BeeInterventionNode.decisionId` como fonte principal, pois o contrato real do Runtime mantém esse campo nulo. A fixture agora reproduz o contrato real e o PR permanece em `AUDIT → FIX`.
+
+### Downstream chain hardening — Intervention → Action → Outcome
+
+Após a auditoria do head `9fd0e4ffb64c008c62d22c8f3c2f1e5ff49864e2`, o detail chain passou a resolver Action explicitamente ligada à Intervention por `action.interventionId`, depois Outcome por `outcome.actionId` e, como fallback explícito, `outcome.interventionId`. A ordem mantém a seleção atual quando aplicável e não infere elos por título, escopo, datas ou proximidade. O estado permanece `AUDIT → FIX`.
