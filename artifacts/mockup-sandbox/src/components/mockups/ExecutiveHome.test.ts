@@ -48,7 +48,7 @@ test("detail chain follows only explicit links and reports absent links", () => 
   const assessment = { finding: assessmentFinding, supportingEvidence: [evidence], contradictingEvidence: [] } as never;
   const recommendation = { finding: recommendationFinding, recommendationId: null, linkedReadingIds: ["reading-a"], linkedAssessmentIds: ["assessment-a"], linkedHypothesisIds: ["hyp-a"], linkedEvidence: [evidence], approvalRequired: true, rationale: null, alternatives: [], doNotRecommend: [], measurementPlan: {} } as never;
   const decision = { finding: decisionFinding, recommendationId: "rec-a", revisionIds: [], interventionIds: ["int-a"] } as never;
-  const intervention = { finding: interventionFinding, recommendationId: "rec-a", decisionId: "decision-a" } as never;
+  const intervention = { finding: interventionFinding, recommendationId: "rec-a", decisionId: null } as never;
   const action = { finding: actionFinding, interventionId: "int-a", dueAt: null, completedAt: null } as never;
   const outcome = { finding: outcomeFinding, interventionId: "int-a", actionId: "action-a", validationStatus: "unvalidated" } as never;
   const result = model({ readings: [{ finding: readingFinding, readingType: "risk", hypotheses: [hypothesisFinding], sources: [], evidence: [evidence], assessments: [assessment], recommendations: [recommendation], decisions: [decision] }], assessments: [assessment], recommendations: [recommendation], decisions: [decision], interventions: [intervention], actions: [action], outcomes: [outcome] });
@@ -57,4 +57,14 @@ test("detail chain follows only explicit links and reports absent links", () => 
   const unrelated = buildDetailChain(model({ readings: [reading("other", "open")] }), finding("action-unrelated", "ACTION", "in_progress"));
   assert.equal(unrelated.reading.length, 0);
   assert.equal(unrelated.recommendation.length, 0);
+});
+
+test("Decision.interventionIds resolves Intervention when intervention.decisionId is null", () => {
+  const decisionFinding = finding("decision-only", "DECISION", "pending_review");
+  const interventionFinding = finding("int-from-decision", "INTERVENTION", "draft");
+  const decision = { finding: decisionFinding, recommendationId: null, revisionIds: [], interventionIds: ["int-from-decision"] } as never;
+  const intervention = { finding: interventionFinding, recommendationId: null, decisionId: null } as never;
+  const chain = buildDetailChain(model({ decisions: [decision], interventions: [intervention] }), decisionFinding);
+  assert.deepEqual(chain.decision.map((item) => item.finding.id), ["decision-only"]);
+  assert.deepEqual(chain.intervention.map((item) => item.finding.id), ["int-from-decision"]);
 });
