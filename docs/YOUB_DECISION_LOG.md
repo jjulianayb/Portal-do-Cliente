@@ -139,3 +139,16 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - Action e Outcome continuam sendo derivados apenas por IDs explícitos.
 - Testes cobrem Reading, Assessment, Action e Outcome selecionados, além de ausência sem inferência.
 - PR #12 permanece `AUDIT → FIX`; não promover automaticamente para `READY FOR STAGING`.
+
+## Product Wiring + Executive Home V1 — fechamento de governança
+
+- Auditoria técnica final concluída com sucesso no head `8bf3f2d9b2f93b256a21e5223a47186418ab7b1a`.
+- PR #12 tecnicamente aprovado: **IMPLEMENTADO + AUDITADO → READY FOR STAGING**.
+- Build #239 (`pull_request`) passou; testes Bee Runtime + Executive Home/Product Wiring passaram.
+- Não há bug conhecido bloqueante no escopo do PR #12.
+- `bee-runtime.ts` permaneceu congelado; SQL e migrations permaneceram inalterados.
+- PR #11 permanece congelado em `25e5fff0540ab460ce16fededbc47b2e1e71e91f`.
+- `Manager/team authorized population wiring pending` permanece gap conhecido e não bloqueante do PR #12.
+- A execução autenticada de SQL/RLS das fundações em staging continua pendente antes de `READY FOR MERGE`.
+- `READY FOR STAGING` não significa `READY FOR MERGE`; não houve merge nem publicação.
+- Este commit sincroniza somente a documentação oficial do estado final.
