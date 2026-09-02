@@ -107,16 +107,20 @@ declare
  v_key text;
 begin
  if auth.uid() is null or jsonb_typeof(p_new_snapshot)<>'object' then raise exception 'invalid assessment revision request'; end if;
+ if p_new_snapshot ? 'assessed_by_user_id' or p_new_snapshot ? 'assessed_at' then raise exception 'assessment authorship and timestamp are server-controlled'; end if;
  foreach v_key in array array['status','evidence_state','supporting_evidence_count','contradicting_evidence_count','unknowns','limitations','assessment_summary','context'] loop
   if not(p_new_snapshot ? v_key) then raise exception 'assessment revision snapshot is missing %',v_key; end if;
  end loop;
  select ea.* into strict v_assessment from public.intelligence_evidence_assessments as ea where ea.id=p_assessment_id for update;
  if not public.is_org_member(v_assessment.organization_id) or not public.intelligence_is_admin(v_assessment.organization_id) then raise exception 'actor is not authorized to revise assessment'; end if;
+ if v_assessment.status not in('draft','under_investigation') then raise exception 'assessed assessment is immutable; create a new assessment for a later analysis'; end if;
+ if p_new_snapshot->>'status' not in('draft','under_investigation','assessed') then raise exception 'assessment revision status must be draft, under_investigation or assessed'; end if;
  if jsonb_typeof(p_new_snapshot->'unknowns')<>'array' or jsonb_typeof(p_new_snapshot->'limitations')<>'array' or jsonb_typeof(p_new_snapshot->'context')<>'object' then raise exception 'assessment JSON shapes are invalid'; end if;
  v_next:=v_assessment;
  v_next.status:=p_new_snapshot->>'status'; v_next.evidence_state:=p_new_snapshot->>'evidence_state'; v_next.supporting_evidence_count:=(p_new_snapshot->>'supporting_evidence_count')::integer; v_next.contradicting_evidence_count:=(p_new_snapshot->>'contradicting_evidence_count')::integer; v_next.unknowns:=p_new_snapshot->'unknowns'; v_next.limitations:=p_new_snapshot->'limitations'; v_next.assessment_summary:=p_new_snapshot->>'assessment_summary'; v_next.context:=p_new_snapshot->'context';
+ if v_next.status='assessed' then v_next.assessed_by_user_id:=auth.uid(); v_next.assessed_at:=now(); else v_next.assessed_by_user_id:=null; v_next.assessed_at:=null; end if;
  perform public._append_evidence_assessment_revision(v_assessment.organization_id,v_assessment.id,public._evidence_assessment_snapshot(v_assessment),public._evidence_assessment_snapshot(v_next),p_reason);
- update public.intelligence_evidence_assessments as ea set status=v_next.status,evidence_state=v_next.evidence_state,supporting_evidence_count=v_next.supporting_evidence_count,contradicting_evidence_count=v_next.contradicting_evidence_count,unknowns=v_next.unknowns,limitations=v_next.limitations,assessment_summary=v_next.assessment_summary,context=v_next.context,updated_at=now() where ea.id=p_assessment_id;
+ update public.intelligence_evidence_assessments as ea set status=v_next.status,evidence_state=v_next.evidence_state,supporting_evidence_count=v_next.supporting_evidence_count,contradicting_evidence_count=v_next.contradicting_evidence_count,unknowns=v_next.unknowns,limitations=v_next.limitations,assessment_summary=v_next.assessment_summary,assessed_by_user_id=v_next.assessed_by_user_id,assessed_at=v_next.assessed_at,context=v_next.context,updated_at=now() where ea.id=p_assessment_id;
  select ea.* into strict v_assessment from public.intelligence_evidence_assessments as ea where ea.id=p_assessment_id;
  return v_assessment;
 end; $$;
