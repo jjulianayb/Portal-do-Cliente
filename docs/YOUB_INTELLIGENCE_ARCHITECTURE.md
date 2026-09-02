@@ -150,3 +150,7 @@ O estado desta correção permanece `AUDIT → FIX`; não é `READY FOR STAGING`
 ### Correção de relação Decision → Intervention
 
 O Product Wiring resolve Decision → Intervention somente a partir de `BeeDecisionNode.interventionIds`, que é a relação explícita preenchida no read model real. `BeeInterventionNode.decisionId` pode permanecer nulo e não é tratado como fonte principal. A cadeia continua read-only, sem alteração do Runtime congelado.
+
+### Continuação explícita da cadeia downstream
+
+O detail da Home resolve Intervention → Action → Outcome somente por IDs presentes no `BeeRuntimeReadModel`. A Action é localizada por `action.interventionId`; o Outcome é localizado primeiro por `outcome.actionId` e depois por `outcome.interventionId` quando não houver Outcome ligado à Action. Ausência de relação permanece ausência, sem inferência ou nova epistemologia.
