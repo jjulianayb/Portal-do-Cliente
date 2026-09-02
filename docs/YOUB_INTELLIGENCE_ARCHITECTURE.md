@@ -118,3 +118,8 @@ O Bee Runtime V1 é uma camada read-only e determinística sobre os read service
 Os intents V1 são determinísticos: `attention_today`, `explain_reading`, `explain_hypothesis`, `explain_evidence`, `explain_recommendation`, `explain_decision`, `list_unknowns`, `list_open_readings`, `list_actions` e `explain_outcome`. `attention_today` prioriza, nesta ordem transparente, risco aberto, evidência conflitante, evidência insuficiente em investigação, Recommendation que exige aprovação, Decision pendente, Action próxima/vencida e Outcome não validado, com limite padrão de cinco itens.
 
 As funções de explicação preservam linguagem epistemicamente segura: hipótese é hipótese em investigação; Reading é leitura registrada; Recommendation é proposta preparada; Decision é decisão registrada; Action não é declarada executada pela Bee. `insufficient` e `conflicting` são sinalizados explicitamente. O Runtime não escreve, não executa, não cria Recommendation/Decision/Intervention/Action/Outcome e não registra cada consulta como evento.
+
+
+### Estado da entrega
+
+Bee Runtime V1 está em `AUDIT` após código e Build/typecheck. PR #10 permanece `READY FOR STAGING`, congelado no head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e`. Esta entrega não é `READY FOR STAGING` nem `READY FOR MERGE`; não há migration e SQL/RLS runtime autenticado continua pendente.
