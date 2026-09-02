@@ -122,4 +122,4 @@ As funções de explicação preservam linguagem epistemicamente segura: hipóte
 
 ### Estado da entrega
 
-Bee Runtime V1 está em `AUDIT` após código e Build/typecheck. PR #10 permanece `READY FOR STAGING`, congelado no head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e`. Esta entrega não é `READY FOR STAGING` nem `READY FOR MERGE`; não há migration e SQL/RLS runtime autenticado continua pendente.
+Bee Runtime V1 está em `READY FOR STAGING` após código, testes verificáveis e Build/typecheck. Isso não é `READY FOR MERGE`. PR #10 permanece `READY FOR STAGING`, congelado no head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e`; não há migration e SQL/RLS runtime autenticado continua pendente.
