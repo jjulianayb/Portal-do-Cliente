@@ -102,7 +102,7 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 ## Product Wiring + Executive Home V1
 
 - PR #11 permanece `READY FOR STAGING`, congelado no head `25e5fff0540ab460ce16fededbc47b2e1e71e91f`; não alterar salvo bug real comprovado.
-- Product Wiring + Executive Home V1 começa `BUILDING` na branch `feature/product-wiring-executive-home-v1`, criada exatamente do head do PR #11. Após código + Build + testes, seguirá para `AUDIT`; não promover automaticamente para `READY FOR STAGING`.
+- Product Wiring + Executive Home V1 está em `AUDIT` na branch `feature/product-wiring-executive-home-v1`, criada exatamente do head do PR #11. Código + Build + testes foram concluídos; não promover automaticamente para `READY FOR STAGING`.
 - A Home executiva usa o Bee Runtime como fonte estruturada para `attentionToday`, Readings, Recommendations, Decisions, Actions e Outcomes. O detalhe usa os contratos de explainability existentes.
 - A UI não cria autorização paralela: o runtime continua primeira fonte autorizada via RLS, e a camada visual só reduz conteúdo. Colaborador permanece na experiência pessoal existente.
 - Não há novos contratos SQL, migrations, writes, LLM, chat persistente, áudio, score ou redesign completo.
