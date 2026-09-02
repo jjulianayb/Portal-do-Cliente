@@ -116,3 +116,20 @@ Após a auditoria do head `9fd0e4ffb64c008c62d22c8f3c2f1e5ff49864e2`, o detail c
 ### Full selectable-finding chain hardening — AUDIT → FIX
 
 Após a auditoria do head `be0f25ce1b36f41ee8d4ad211a2717d0feff72b2`, o `buildDetailChain` passou a resolver Recommendation por Reading e Assessment quando os links explícitos existirem, e Decision por Intervention em aberturas de Action/Outcome mesmo sem Recommendation. O downstream continua usando somente `interventionId`, `actionId` e `interventionId` de Outcome. O PR permanece `AUDIT → FIX`.
+
+## Product Wiring + Executive Home V1 — IMPLEMENTADO + AUDITADO → READY FOR STAGING
+
+### Fechamento de governança
+
+A auditoria técnica final do Dodo foi concluída com sucesso no head `8bf3f2d9b2f93b256a21e5223a47186418ab7b1a`. O PR #12 está tecnicamente aprovado e classificado como **IMPLEMENTADO + AUDITADO → READY FOR STAGING**.
+
+- Build #239 (`pull_request`): PASS.
+- Testes Bee Runtime + Executive Home/Product Wiring: PASS.
+- Não há bug conhecido bloqueante no escopo do PR #12.
+- `bee-runtime.ts` permaneceu congelado; não houve mudança nas sete suítes SQL nem migrations.
+- PR #11 continua congelado em `25e5fff0540ab460ce16fededbc47b2e1e71e91f`.
+- `Manager/team authorized population wiring pending` continua gap conhecido, não bloqueante para o PR #12.
+- SQL/RLS autenticado de staging das fundações continua pendente antes de `READY FOR MERGE`.
+- `READY FOR STAGING` não significa `READY FOR MERGE`.
+
+Este é o fechamento documental do PR #12. Não houve merge, deploy, alteração de main, staging ou produção.
