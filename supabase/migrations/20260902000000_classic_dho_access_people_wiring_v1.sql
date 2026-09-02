@@ -15,7 +15,7 @@ returns boolean
 language sql stable security definer
 set search_path = public, pg_temp
 as $$
-  select count(*) = 1 and max(e.id) = target_employee
+  select count(*) = 1 and (array_agg(e.id))[1] = target_employee
   from public.employees e
   where e.organization_id = target_org
     and e.auth_user_id = auth.uid();
@@ -26,7 +26,7 @@ returns uuid
 language sql stable security definer
 set search_path = public, pg_temp
 as $$
-  select case when count(*) = 1 then max(e.id) else null end
+  select case when count(*) = 1 then (array_agg(e.id))[1] else null end
   from public.employees e
   where e.organization_id = target_org
     and e.auth_user_id = auth.uid()
@@ -84,18 +84,114 @@ as $$
     or (public.has_org_role(target_org, array['gestor']) and public.classic_is_direct_report(target_org, target_employee));
 $$;
 
+revoke all on function public.classic_is_org_admin(uuid), public.classic_has_single_own_employee(uuid, uuid), public.classic_manager_employee_id(uuid), public.classic_is_direct_report(uuid, uuid), public.classic_can_read_employee(uuid, uuid), public.classic_can_read_sensitive_employee(uuid, uuid), public.classic_can_write_employee(uuid, uuid) from public;
 grant execute on function public.classic_is_org_admin(uuid), public.classic_has_single_own_employee(uuid, uuid), public.classic_manager_employee_id(uuid), public.classic_is_direct_report(uuid, uuid), public.classic_can_read_employee(uuid, uuid), public.classic_can_read_sensitive_employee(uuid, uuid), public.classic_can_write_employee(uuid, uuid) to authenticated;
 
--- Prevent a manager reference from crossing tenants and prevent self-management.
+-- Preflight is deliberately before every new constraint. Legacy data is never
+-- corrected or nulled silently; an incompatible database must stop here with a
+-- diagnostic that names the failing category and row count.
+do $$
+declare
+  v_cross_tenant bigint;
+  v_missing_manager bigint;
+  v_self_manager bigint;
+  v_legacy_incompatible bigint;
+  v_duplicate_keys bigint;
+begin
+  select count(*) into v_cross_tenant
+  from public.employees e
+  where e.manager_employee_id is not null
+    and exists (
+      select 1 from public.employees manager
+      where manager.id = e.manager_employee_id
+        and manager.organization_id <> e.organization_id
+    );
+  if v_cross_tenant > 0 then
+    raise exception 'classic_dho_access_people_wiring_v1 preflight failed: % manager references cross-tenant employees; no data was changed', v_cross_tenant using errcode = '23514';
+  end if;
+
+  select count(*) into v_missing_manager
+  from public.employees e
+  where e.manager_employee_id is not null
+    and not exists (select 1 from public.employees manager where manager.id = e.manager_employee_id);
+  if v_missing_manager > 0 then
+    raise exception 'classic_dho_access_people_wiring_v1 preflight failed: % manager references point to nonexistent employees; no data was changed', v_missing_manager using errcode = '23503';
+  end if;
+
+  select count(*) into v_self_manager
+  from public.employees e
+  where e.manager_employee_id = e.id;
+  if v_self_manager > 0 then
+    raise exception 'classic_dho_access_people_wiring_v1 preflight failed: % employees self-reference as manager; no data was changed', v_self_manager using errcode = '23514';
+  end if;
+
+  select count(*) into v_legacy_incompatible
+  from public.employees e
+  where e.organization_id is null or e.id is null;
+  if v_legacy_incompatible > 0 then
+    raise exception 'classic_dho_access_people_wiring_v1 preflight failed: % employees have null organization_id/id and are incompatible with the candidate key; no data was changed', v_legacy_incompatible using errcode = '23514';
+  end if;
+
+  select count(*) into v_duplicate_keys
+  from (
+    select e.organization_id, e.id
+    from public.employees e
+    group by e.organization_id, e.id
+    having count(*) > 1
+  ) duplicates;
+  if v_duplicate_keys > 0 then
+    raise exception 'classic_dho_access_people_wiring_v1 preflight failed: % duplicate (organization_id, id) candidate keys; no data was changed', v_duplicate_keys using errcode = '23505';
+  end if;
+end $$;
+
+-- PostgreSQL requires a unique candidate key matching the referenced columns
+-- for a composite FK. The base schema only has employees.id as its primary key,
+-- so create the exact same-tenant candidate key when it is absent. Existing
+-- compatible unique constraints/indexes are detected and reused.
+do $$
+declare
+  v_org_attnum int2;
+  v_id_attnum int2;
+  v_has_key boolean;
+begin
+  select attnum into v_org_attnum from pg_attribute
+    where attrelid = 'public.employees'::regclass and attname = 'organization_id' and not attisdropped;
+  select attnum into v_id_attnum from pg_attribute
+    where attrelid = 'public.employees'::regclass and attname = 'id' and not attisdropped;
+  if v_org_attnum is null or v_id_attnum is null then
+    raise exception 'classic_dho_access_people_wiring_v1 cannot install: employees.organization_id and employees.id are required for the candidate key' using errcode = '42703';
+  end if;
+
+  select exists (
+    select 1 from pg_constraint c
+    where c.conrelid = 'public.employees'::regclass
+      and c.contype in ('p', 'u')
+      and c.conkey = array[v_org_attnum, v_id_attnum]::int2[]
+  ) or exists (
+    select 1 from pg_index i
+    where i.indrelid = 'public.employees'::regclass
+      and i.indisunique
+      and i.indnkeyatts = 2
+      and i.indkey::text = v_org_attnum::text || ' ' || v_id_attnum::text
+  ) into v_has_key;
+
+  if not v_has_key then
+    alter table public.employees
+      add constraint employees_organization_id_id_key unique (organization_id, id);
+  end if;
+end $$;
+
+-- The candidate key now makes the tenant part of the manager reference. The
+-- check rejects self-management independently of the FK.
 do $$
 begin
-  if not exists (select 1 from pg_constraint where conname = 'employees_manager_same_org_fkey') then
+  if not exists (select 1 from pg_constraint where conname = 'employees_manager_same_org_fkey' and conrelid = 'public.employees'::regclass) then
     alter table public.employees
       add constraint employees_manager_same_org_fkey
       foreign key (organization_id, manager_employee_id)
       references public.employees (organization_id, id);
   end if;
-  if not exists (select 1 from pg_constraint where conname = 'employees_manager_not_self_check') then
+  if not exists (select 1 from pg_constraint where conname = 'employees_manager_not_self_check' and conrelid = 'public.employees'::regclass) then
     alter table public.employees
       add constraint employees_manager_not_self_check
       check (manager_employee_id is null or manager_employee_id <> id);
@@ -297,24 +393,20 @@ with check (
 create policy classic_disciplinary_approvals_update_authorized on public.disciplinary_action_approvals
 for update to authenticated
 using (
-  (approver_type = 'rh' and public.classic_is_org_admin(organization_id))
-  or (approver_type = 'intermediario' and exists (
-    select 1 from public.organization_approvers oa
-    where oa.organization_id = disciplinary_action_approvals.organization_id
-      and oa.approver_label = disciplinary_action_approvals.approver_label
-      and lower(oa.email) = lower(coalesce(auth.jwt()->>'email', ''))
-      and oa.active = true
-  ))
+  exists (
+    select 1 from public.disciplinary_actions a
+    where a.id = action_id
+      and a.organization_id = disciplinary_action_approvals.organization_id
+      and public.classic_can_write_employee(a.organization_id, a.employee_id)
+  )
 )
 with check (
-  (approver_type = 'rh' and public.classic_is_org_admin(organization_id))
-  or (approver_type = 'intermediario' and exists (
-    select 1 from public.organization_approvers oa
-    where oa.organization_id = disciplinary_action_approvals.organization_id
-      and oa.approver_label = disciplinary_action_approvals.approver_label
-      and lower(oa.email) = lower(coalesce(auth.jwt()->>'email', ''))
-      and oa.active = true
-  ))
+  exists (
+    select 1 from public.disciplinary_actions a
+    where a.id = action_id
+      and a.organization_id = disciplinary_action_approvals.organization_id
+      and public.classic_can_write_employee(a.organization_id, a.employee_id)
+  )
 );
 
 grant select, insert, update, delete on

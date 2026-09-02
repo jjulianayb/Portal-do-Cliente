@@ -68,8 +68,57 @@ insert into public.checkins(id, organization_id, employee_id, mood, engagement, 
 
 create or replace function pg_temp.assert_count(label text, actual bigint, expected bigint)
 returns void language plpgsql as $$ begin if actual <> expected then raise exception '%: expected %, got %', label, expected, actual; end if; end $$;
+create or replace function pg_temp.assert_true(label text, actual boolean)
+returns void language plpgsql as $$ begin if not actual then raise exception '%: expected true', label; end if; end $$;
+create or replace function pg_temp.try_manager_fk(p_id uuid, p_org uuid, p_manager uuid)
+returns boolean language plpgsql security invoker as $$
+begin
+  begin
+    insert into public.employees(id, organization_id, full_name, status, manager_employee_id)
+    values (p_id, p_org, 'constraint probe', 'active', p_manager);
+    delete from public.employees where id = p_id;
+    return true;
+  exception when others then
+    return false;
+  end;
+end $$;
 create or replace function pg_temp.try_manager_outside_assessment()
 returns boolean language plpgsql security invoker as $$ begin begin insert into public.assessments(organization_id,cycle_id,subject_employee_id,scores) values ('a3000000-0000-0000-0000-000000000001','a3000000-0000-0000-0000-000000000021','a3000000-0000-0000-0000-000000000017','{}'); return true; exception when others then return false; end; end $$;
+create or replace function pg_temp.try_manager_self_update(p_id uuid)
+returns boolean language plpgsql security invoker as $$ begin begin update public.employees set manager_employee_id = id where id = p_id; return true; exception when others then return false; end; end $$;
+
+-- Constraint installation checks: the candidate key is exact, the FK exists,
+-- and same-tenant/cross-tenant/self-manager behavior is explicit.
+select pg_temp.assert_true('employees candidate key exists',
+  exists (
+    select 1 from pg_constraint c
+    where c.conrelid = 'public.employees'::regclass
+      and c.contype in ('p', 'u')
+      and c.conkey = array[
+        (select attnum from pg_attribute where attrelid = 'public.employees'::regclass and attname = 'organization_id'),
+        (select attnum from pg_attribute where attrelid = 'public.employees'::regclass and attname = 'id')
+      ]::int2[]
+  )
+  or exists (
+    select 1 from pg_index i
+    where i.indrelid = 'public.employees'::regclass
+      and i.indisunique and i.indnkeyatts = 2
+      and i.indkey::text = (
+        select attnum::text from pg_attribute where attrelid = 'public.employees'::regclass and attname = 'organization_id'
+      ) || ' ' || (
+        select attnum::text from pg_attribute where attrelid = 'public.employees'::regclass and attname = 'id'
+      )
+  )
+);
+select pg_temp.assert_true('same-tenant manager FK exists', exists (
+  select 1 from pg_constraint
+  where conrelid = 'public.employees'::regclass
+    and conname = 'employees_manager_same_org_fkey'
+    and contype = 'f'
+));
+select pg_temp.assert_true('same-tenant manager accepted', pg_temp.try_manager_fk('a3000000-0000-0000-0000-000000000071', 'a3000000-0000-0000-0000-000000000001', 'a3000000-0000-0000-0000-000000000014'));
+select pg_temp.assert_true('cross-tenant manager rejected', not pg_temp.try_manager_fk('a3000000-0000-0000-0000-000000000072', 'a3000000-0000-0000-0000-000000000001', 'b3000000-0000-0000-0000-000000000011'));
+select pg_temp.assert_true('self-manager rejected', not pg_temp.try_manager_self_update('a3000000-0000-0000-0000-000000000017'));
 
 set local role authenticated;
 
