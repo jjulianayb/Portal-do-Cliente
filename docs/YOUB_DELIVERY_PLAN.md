@@ -93,8 +93,8 @@ A nova branch `feature/bee-runtime-v1` parte exatamente do head `316ee97c15ab96f
 
 O Runtime não cria, altera ou executa qualquer entidade. Não usa LLM, ML, scoring opaco, NLP complexo, chat persistente, raw prompt, conversa bruta ou chain-of-thought. A Bee pode entender e explicar; não pode conceder permissão a si mesma, apresentar hipótese como fato ou Recommendation como Decision.
 
-## Product Wiring + Executive Home V1 — BUILDING
+## Product Wiring + Executive Home V1 — AUDIT
 
-A nova branch `feature/product-wiring-executive-home-v1` parte exatamente do head `25e5fff0540ab460ce16fededbc47b2e1e71e91f` do PR #11, que permanece `READY FOR STAGING`. Esta entrega conecta o Bee Runtime à experiência visível da plataforma em uma Home executiva orientada a exceções, sem duplicar entidades ou reconstruir módulos antigos. Após código, Build e testes, o estado seguirá para `AUDIT`; não promover automaticamente para `READY FOR STAGING`.
+A nova branch `feature/product-wiring-executive-home-v1` parte exatamente do head `25e5fff0540ab460ce16fededbc47b2e1e71e91f` do PR #11, que permanece `READY FOR STAGING`. Esta entrega conecta o Bee Runtime à experiência visível da plataforma em uma Home executiva orientada a exceções, sem duplicar entidades ou reconstruir módulos antigos. Código, Build e testes foram concluídos; o estado atual é `AUDIT`. Não promover automaticamente para `READY FOR STAGING` antes da auditoria.
 
 A Home utiliza `attentionToday`, o read model e os handlers determinísticos do Bee Runtime. A experiência preserva Reading, Hypothesis, Evidence, Assessment, Recommendation, Decision, Intervention, Action e Outcome. Não há score, KPI inventado, write, LLM, chat persistente, áudio ou execução automática.
