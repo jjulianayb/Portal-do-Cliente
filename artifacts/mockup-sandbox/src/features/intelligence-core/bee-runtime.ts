@@ -134,7 +134,7 @@ export async function loadBeeRuntimeSource(context: BeeRuntimeContext): Promise<
 
 const sourceKey = (org: string, id: string) => `${org}:${id}`;
 const scopeAllowed = (context: BeeRuntimeContext, type: string | null | undefined, ref: string | null | undefined, personalId?: string | null): boolean => {
-  if (context.role === "colaborador") return type === "employee" && ref === (personalId ?? context.employeeId);
+  if (context.role === "colaborador") return type === "employee" && ref === context.employeeId;
   return context.authorizedScopes.some((scope) => (scope.scopeType === "organization" && scope.scopeRefs.includes(context.organizationId)) || (scope.scopeType === "personal" && type === "employee" && ref === context.employeeId) || (scope.scopeType === type && !!ref && scope.scopeRefs.includes(ref)));
 };
 const sensitivityAllowed = (context: BeeRuntimeContext, sensitivity?: SignalSensitivity | null): boolean => !sensitivity || context.sensitivity.includes(sensitivity);
