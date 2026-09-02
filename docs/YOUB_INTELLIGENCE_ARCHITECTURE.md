@@ -154,3 +154,7 @@ O Product Wiring resolve Decision → Intervention somente a partir de `BeeDecis
 ### Continuação explícita da cadeia downstream
 
 O detail da Home resolve Intervention → Action → Outcome somente por IDs presentes no `BeeRuntimeReadModel`. A Action é localizada por `action.interventionId`; o Outcome é localizado primeiro por `outcome.actionId` e depois por `outcome.interventionId` quando não houver Outcome ligado à Action. Ausência de relação permanece ausência, sem inferência ou nova epistemologia.
+
+### Resolver para todos os findings selecionáveis
+
+O detail da Home agora inicia a reconstrução a partir de Reading, Assessment, Recommendation, Decision, Action ou Outcome. As relações upstream/downstream são limitadas às chaves explícitas do read model: `linkedReadingIds`, `linkedAssessmentIds`, `recommendationId`, `interventionIds`, `interventionId` e `actionId`. Não há inferência por título, escopo, data, status ou posição. O Runtime congelado não foi alterado.
