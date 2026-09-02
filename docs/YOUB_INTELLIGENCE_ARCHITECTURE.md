@@ -136,3 +136,13 @@ Para papéis organizacionais, o contexto é montado com escopos explícitos e os
 ### Estado da entrega
 
 Product Wiring + Executive Home V1 está em `AUDIT` após código, Build e testes. PR #11 permanece `READY FOR STAGING`, congelado no head `25e5fff0540ab460ce16fededbc47b2e1e71e91f`. Esta entrega não é `READY FOR STAGING` nem `READY FOR MERGE`; não há migration nem validação de staging.
+
+## Product Wiring + Executive Home V1 — hardening
+
+O wiring de Home mantém o Bee Runtime como fonte autorizada. A coleção de Readings abertas é derivada por `listOpenReadings` e não trata status resolvido ou arquivado como aberto. A coleção de Actions próximas usa janela explícita de 24 horas, incluindo vencidas e excluindo futuras distantes, sem alterar o Runtime congelado.
+
+O detail expõe a cadeia somente quando cada relação está presente no `BeeRuntimeReadModel`: Reading, Hypothesis, Evidence, Evidence Assessment, Recommendation, Decision, Intervention, Action e Outcome. Nenhum elo é inventado. Recommendation, Decision, Action e Outcome permanecem semanticamente distintos e com linguagem segura.
+
+Não existem rotas reais verificadas para os atalhos Pessoas, Avaliações, PDI e desenvolvimento ou Relatórios no mockup atual; por isso os cards foram omitidos. Gap registrado: **Manager/team authorized population wiring pending**. A população autorizada de equipe do gestor será conectada com a estrutura de pessoas/equipes em entrega posterior.
+
+O estado desta correção permanece `AUDIT → FIX`; não é `READY FOR STAGING`.
