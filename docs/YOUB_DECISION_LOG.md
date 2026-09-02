@@ -90,3 +90,11 @@ Bee Actions + Impact Foundation V1: `READY FOR STAGING`, congelado no head `f867
 - O contrato conecta Leitura Organizacional → Hipótese → Evidência → avaliação de suficiência → Recommendation por FKs/junctions tenant-safe e provenance explícita.
 - `insufficient`, `weak`, `moderate`, `strong` e `conflicting` não são probabilidades de causa. A ausência de evidência não é evidência negativa.
 - Recommendation é proposta e permanece distinta de Decision, Approval, Intervention, Action e Outcome. A Bee poderá explicar a cadeia futuramente, mas não deverá apresentar hipótese como fato nem Recommendation como decisão.
+
+## Bee Runtime V1
+
+- PR #10 permanece `READY FOR STAGING`, congelado no head `316ee97c15ab96f10d77ea06ae7a9dd51c87094e`; não deve ser alterado salvo bug real comprovado.
+- Bee Runtime V1 começa `BUILDING` na branch `feature/bee-runtime-v1`, criada exatamente do head do PR #10. Após código e Build/typecheck, seguirá para `AUDIT`; não promover automaticamente para `READY FOR STAGING`.
+- O Runtime é um compositor read-only que depende do RLS e dos helpers existentes como primeira barreira. Contexto, escopos, papel, população, sensitivity e purpose são explícitos; a camada TypeScript pode restringir, mas nunca ampliar, a autorização.
+- `attention_today` usa regras determinísticas e transparentes, sem score opaco. Explicações preservam provenance, unknowns e limitations e diferenciam FACT, READING, HYPOTHESIS, EVIDENCE, RECOMMENDATION, DECISION, INTERVENTION, ACTION e OUTCOME.
+- Nenhum prompt bruto, conversa, chain-of-thought, write, trigger, execução ou evento de consulta é criado nesta entrega.
