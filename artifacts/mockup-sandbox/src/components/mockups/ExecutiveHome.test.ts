@@ -6,6 +6,12 @@ import { buildBeeAttentionToday, type BeeAttentionItem, type BeeRuntimeReadModel
 const finding = (id: string, kind: BeeAttentionItem["finding"]["kind"], status = "open") => ({ id, kind, organizationId: "org-a", scope: { type: "organization", ref: "org-a" }, title: id, summary: id, status, knowledgeKind: "declared", unknowns: [], limitations: [], provenance: [{ entityType: kind, entityId: id }], sensitivity: null, timestamps: {}, links: [] }) as never;
 const model = (overrides: Partial<BeeRuntimeReadModel> = {}): BeeRuntimeReadModel => ({ context: { organizationId: "org-a", userId: "user-a", role: "diretoria", employeeId: null, purpose: "executive_home" }, readings: [], assessments: [], recommendations: [], decisions: [], interventions: [], actions: [], outcomes: [], memory: [], events: [], attentionToday: [], ...overrides });
 const reading = (id: string, status: string) => ({ finding: finding(id, "READING", status), readingType: "risk", hypotheses: [], sources: [], evidence: [], assessments: [], recommendations: [], decisions: [] }) as never;
+const fullChainFixture = () => {
+  const readingFinding = finding("reading-chain", "READING"); const hypothesisFinding = finding("hyp-chain", "HYPOTHESIS", "under_investigation"); const evidenceFinding = finding("evidence-chain", "EVIDENCE", "observed"); const assessmentFinding = finding("assessment-chain", "ASSESSMENT", "assessed"); const recommendationFinding = finding("rec-chain", "RECOMMENDATION", "proposed"); const decisionFinding = finding("decision-chain", "DECISION", "pending_review"); const interventionFinding = finding("int-chain", "INTERVENTION", "draft"); const actionFinding = finding("action-chain", "ACTION", "in_progress"); const outcomeFinding = finding("outcome-chain", "OUTCOME", "observed");
+  const evidence = { finding: evidenceFinding, relation: "supports", sourceType: "metric" } as never; const assessment = { finding: assessmentFinding, supportingEvidence: [evidence], contradictingEvidence: [] } as never; const recommendation = { finding: recommendationFinding, recommendationId: null, linkedReadingIds: ["reading-chain"], linkedAssessmentIds: ["assessment-chain"], linkedHypothesisIds: ["hyp-chain"], linkedEvidence: [evidence], approvalRequired: true, rationale: null, alternatives: [], doNotRecommend: [], measurementPlan: {} } as never; const decision = { finding: decisionFinding, recommendationId: "rec-chain", revisionIds: [], interventionIds: ["int-chain"] } as never; const intervention = { finding: interventionFinding, recommendationId: "rec-chain", decisionId: null } as never; const action = { finding: actionFinding, interventionId: "int-chain", dueAt: null, completedAt: null } as never; const outcome = { finding: outcomeFinding, interventionId: "int-chain", actionId: "action-chain", validationStatus: "unvalidated" } as never;
+  const result = model({ readings: [{ finding: readingFinding, readingType: "risk", hypotheses: [hypothesisFinding], sources: [], evidence: [evidence], assessments: [assessment], recommendations: [recommendation], decisions: [decision] }], assessments: [assessment], recommendations: [recommendation], decisions: [decision], interventions: [intervention], actions: [action], outcomes: [outcome] });
+  return { result, readingFinding, assessmentFinding, decisionFinding, actionFinding, outcomeFinding };
+};
 
 test("openReadings uses one explicit collection and excludes resolved or archived readings", () => {
   const result = listOpenReadingsForHome(model({ readings: [reading("open", "open"), reading("investigating", "under_investigation"), reading("resolved", "resolved"), reading("archived", "archived")] }));
@@ -86,4 +92,53 @@ test("Decision chain continues through explicit Intervention → Action → Outc
   const withoutAction = buildDetailChain(model({ decisions: [decision], interventions: [intervention], outcomes: [outcome] }), decisionFinding);
   assert.deepEqual(withoutAction.action, []);
   assert.deepEqual(withoutAction.outcome.map((item) => item.finding.id), ["outcome-a"]);
+});
+
+test("Reading selection continues through every explicitly linked downstream node", () => {
+  const fixture = fullChainFixture();
+  const chain = buildDetailChain(fixture.result, fixture.readingFinding);
+  assert.deepEqual(chain.reading.map((item) => item.finding.id), ["reading-chain"]);
+  assert.deepEqual(chain.hypothesis.map((item) => item.finding.id), ["hyp-chain"]);
+  assert.deepEqual(chain.evidence.map((item) => item.finding.id), ["evidence-chain"]);
+  assert.deepEqual(chain.assessment.map((item) => item.finding.id), ["assessment-chain"]);
+  assert.deepEqual(chain.recommendation.map((item) => item.finding.id), ["rec-chain"]);
+  assert.deepEqual(chain.decision.map((item) => item.finding.id), ["decision-chain"]);
+  assert.deepEqual(chain.intervention.map((item) => item.finding.id), ["int-chain"]);
+  assert.deepEqual(chain.action.map((item) => item.finding.id), ["action-chain"]);
+  assert.deepEqual(chain.outcome.map((item) => item.finding.id), ["outcome-chain"]);
+});
+
+test("Assessment selection resolves Recommendation through linkedAssessmentIds", () => {
+  const fixture = fullChainFixture();
+  const chain = buildDetailChain(fixture.result, fixture.assessmentFinding);
+  assert.deepEqual(chain.assessment.map((item) => item.finding.id), ["assessment-chain"]);
+  assert.deepEqual(chain.recommendation.map((item) => item.finding.id), ["rec-chain"]);
+  assert.deepEqual(chain.decision.map((item) => item.finding.id), ["decision-chain"]);
+  assert.deepEqual(chain.intervention.map((item) => item.finding.id), ["int-chain"]);
+  assert.deepEqual(chain.action.map((item) => item.finding.id), ["action-chain"]);
+  assert.deepEqual(chain.outcome.map((item) => item.finding.id), ["outcome-chain"]);
+});
+
+test("Action selection resolves Decision without inventing Recommendation", () => {
+  const fixture = fullChainFixture();
+  const decisionOnlyInterventions = fixture.result.interventions.map((item) => ({ ...item, recommendationId: null })) as never;
+  const actionOnly = model({ decisions: fixture.result.decisions, interventions: decisionOnlyInterventions, actions: fixture.result.actions, outcomes: fixture.result.outcomes });
+  const chain = buildDetailChain(actionOnly, fixture.actionFinding);
+  assert.deepEqual(chain.decision.map((item) => item.finding.id), ["decision-chain"]);
+  assert.deepEqual(chain.intervention.map((item) => item.finding.id), ["int-chain"]);
+  assert.deepEqual(chain.action.map((item) => item.finding.id), ["action-chain"]);
+  assert.deepEqual(chain.outcome.map((item) => item.finding.id), ["outcome-chain"]);
+  assert.deepEqual(chain.recommendation, []);
+});
+
+test("Outcome selection follows explicit Action and Intervention links without inventing Recommendation", () => {
+  const fixture = fullChainFixture();
+  const decisionOnlyInterventions = fixture.result.interventions.map((item) => ({ ...item, recommendationId: null })) as never;
+  const outcomeOnly = model({ decisions: fixture.result.decisions, interventions: decisionOnlyInterventions, actions: fixture.result.actions, outcomes: fixture.result.outcomes });
+  const chain = buildDetailChain(outcomeOnly, fixture.outcomeFinding);
+  assert.deepEqual(chain.decision.map((item) => item.finding.id), ["decision-chain"]);
+  assert.deepEqual(chain.intervention.map((item) => item.finding.id), ["int-chain"]);
+  assert.deepEqual(chain.action.map((item) => item.finding.id), ["action-chain"]);
+  assert.deepEqual(chain.outcome.map((item) => item.finding.id), ["outcome-chain"]);
+  assert.deepEqual(chain.recommendation, []);
 });
