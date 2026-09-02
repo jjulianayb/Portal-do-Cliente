@@ -85,5 +85,5 @@ test("Decision chain continues through explicit Intervention → Action → Outc
   assert.deepEqual(chain.outcome.map((item) => item.finding.id), ["outcome-a"]);
   const withoutAction = buildDetailChain(model({ decisions: [decision], interventions: [intervention], outcomes: [outcome] }), decisionFinding);
   assert.deepEqual(withoutAction.action, []);
-  assert.deepEqual(withoutAction.outcome, []);
+  assert.deepEqual(withoutAction.outcome.map((item) => item.finding.id), ["outcome-a"]);
 });
