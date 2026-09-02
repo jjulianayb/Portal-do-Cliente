@@ -8,6 +8,7 @@ create temp table classic_access_users as
 select id, row_number() over (order by created_at, id) as n
 from auth.users
 limit 6;
+grant select on classic_access_users to authenticated;
 
 DO $$
 BEGIN

@@ -119,19 +119,19 @@ create policy organizational_readings_select_role on public.intelligence_organiz
 create policy organizational_readings_insert_admin on public.intelligence_organizational_readings for insert to authenticated with check (public.intelligence_is_admin(organization_id));
 create policy organizational_reading_sources_select_role on public.intelligence_organizational_reading_sources for select to authenticated using (
   public.intelligence_is_admin(organization_id)
-  or exists (select 1 from public.intelligence_organizational_readings r where r.organization_id=organizational_reading_sources.organization_id and r.id=organizational_reading_sources.reading_id and public.has_org_role(r.organization_id,array['diretoria']) and r.scope_type in ('team','area','unit','process','organization'))
+  or exists (select 1 from public.intelligence_organizational_readings r where r.organization_id=public.intelligence_organizational_reading_sources.organization_id and r.id=public.intelligence_organizational_reading_sources.reading_id and public.has_org_role(r.organization_id,array['diretoria']) and r.scope_type in ('team','area','unit','process','organization'))
 );
 create policy organizational_reading_sources_insert_admin on public.intelligence_organizational_reading_sources for insert to authenticated with check (public.intelligence_is_admin(organization_id));
 create policy organizational_reading_sources_delete_admin on public.intelligence_organizational_reading_sources for delete to authenticated using (public.intelligence_is_admin(organization_id));
 create policy organizational_reading_hypotheses_select_role on public.intelligence_organizational_reading_hypotheses for select to authenticated using (
   public.intelligence_is_admin(organization_id)
-  or exists (select 1 from public.intelligence_organizational_readings r where r.organization_id=organizational_reading_hypotheses.organization_id and r.id=organizational_reading_hypotheses.reading_id and public.has_org_role(r.organization_id,array['diretoria']) and r.scope_type in ('team','area','unit','process','organization'))
+  or exists (select 1 from public.intelligence_organizational_readings r where r.organization_id=public.intelligence_organizational_reading_hypotheses.organization_id and r.id=public.intelligence_organizational_reading_hypotheses.reading_id and public.has_org_role(r.organization_id,array['diretoria']) and r.scope_type in ('team','area','unit','process','organization'))
 );
 create policy organizational_reading_hypotheses_insert_admin on public.intelligence_organizational_reading_hypotheses for insert to authenticated with check (public.intelligence_is_admin(organization_id));
 create policy organizational_reading_hypotheses_delete_admin on public.intelligence_organizational_reading_hypotheses for delete to authenticated using (public.intelligence_is_admin(organization_id));
 create policy organizational_reading_revisions_select_role on public.intelligence_organizational_reading_revisions for select to authenticated using (
   public.intelligence_is_admin(organization_id)
-  or exists (select 1 from public.intelligence_organizational_readings r where r.organization_id=organizational_reading_revisions.organization_id and r.id=organizational_reading_revisions.reading_id and public.has_org_role(r.organization_id,array['diretoria']) and r.scope_type in ('team','area','unit','process','organization'))
+  or exists (select 1 from public.intelligence_organizational_readings r where r.organization_id=public.intelligence_organizational_reading_revisions.organization_id and r.id=public.intelligence_organizational_reading_revisions.reading_id and public.has_org_role(r.organization_id,array['diretoria']) and r.scope_type in ('team','area','unit','process','organization'))
 );
 revoke update,delete on public.intelligence_organizational_readings from authenticated;
 revoke insert,update,delete on public.intelligence_organizational_reading_revisions from authenticated;
