@@ -1,6 +1,7 @@
-import { ArrowRight, BarChart3, BookOpen, CheckCircle2, ClipboardCheck, Clock3, FileText, GitBranch, ShieldCheck, Sparkles, Target, Users, X, AlertTriangle, CircleHelp } from "lucide-react";
-import { BeeShell, type BeeContext } from "./BeeShell";
-import { explainReading, explainRecommendation, handleBeeIntent, type BeeAttentionItem, type BeeExplanation, type BeeIntent, type BeeRuntimeContext, type BeeRuntimeFinding, type BeeRuntimeReadModel } from "../../features/intelligence-core/bee-runtime";
+import { ArrowRight, BarChart3, BookOpen, ClipboardCheck, Clock3, FileText, ShieldCheck, Sparkles, Target, Users, X, AlertTriangle, CircleHelp } from "lucide-react";
+import { useState } from "react";
+import BeeShell, { type BeeContext } from "./BeeShell";
+import { BEE_INTENTS, explainReading, explainRecommendation, type BeeAttentionItem, type BeeExplanation, type BeeIntent, type BeeRuntimeContext, type BeeRuntimeFinding, type BeeRuntimeReadModel } from "../../features/intelligence-core/bee-runtime";
 
 export type ExecutiveHomeProps = { displayName: string; organizationName: string; runtimeContext: BeeRuntimeContext; model: BeeRuntimeReadModel; onIntent?: (intent: BeeIntent) => void; beeResponse?: string | null; };
 export type ExecutiveSnapshot = { openReadings: number; pendingRecommendations: number; pendingDecisions: number; actionsDue: number; outcomesPending: number; };
