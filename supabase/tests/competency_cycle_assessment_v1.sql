@@ -39,8 +39,6 @@ insert into public.employees(id,organization_id,auth_user_id,full_name,status,po
 insert into public.platform_memberships(user_id,platform_role) select id,case when n=1 then 'platform_admin' else 'platform_analyst' end from cca_users where n in (1,6);
 insert into public.partners(id,name,slug) values ('c5000000-0000-0000-0000-000000000001','Partner CCA','cca-partner');
 insert into public.partner_memberships(partner_id,user_id,partner_role) select 'c5000000-0000-0000-0000-000000000001',id,'partner_operator' from cca_users where n=6;
-insert into public.partner_organization_access(partner_id,organization_id,access_scope,granted_by) values ('c5000000-0000-0000-0000-000000000001','a5000000-0000-0000-0000-000000000001','reporting',(select id from cca_users where n=1));
-
 create or replace function pg_temp.assert_true(label text,v boolean) returns void language plpgsql as $$ begin if not v then raise exception '% expected true',label; end if; end $$;
 create or replace function pg_temp.assert_eq(label text,actual text,expected text) returns void language plpgsql as $$ begin if actual is distinct from expected then raise exception '% expected %, got %',label,expected,actual; end if; end $$;
 create or replace function pg_temp.try_sql(sql text) returns boolean language plpgsql security invoker as $$ begin execute sql; return true; exception when others then return false; end $$;
