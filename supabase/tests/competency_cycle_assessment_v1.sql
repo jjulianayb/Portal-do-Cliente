@@ -2,10 +2,10 @@
 -- Rollback-only runtime suite. Requires the complete chain through PR #14.
 begin;
 
-create temp table cca_users as select id,row_number() over(order by created_at,id) as n from auth.users limit 6;
+create temp table cca_users as select id,row_number() over(order by created_at,id) as n from auth.users limit 7;
 grant select on cca_users to authenticated;
 DO $$ BEGIN
-  IF (select count(*) from cca_users) < 6 THEN RAISE EXCEPTION 'CCA suite requires six disposable auth users'; END IF;
+  IF (select count(*) from cca_users) < 7 THEN RAISE EXCEPTION 'CCA suite requires seven disposable auth users'; END IF;
   IF to_regclass('public.position_competencies') IS NULL OR to_regclass('public.assessment_competency_scores') IS NULL THEN RAISE EXCEPTION 'CCA tables are missing'; END IF;
 END $$;
 
@@ -13,7 +13,7 @@ insert into public.organizations(id,name,slug,plan,status) values
  ('a5000000-0000-0000-0000-000000000001','CCA A','cca-a','essencial','active'),
  ('b5000000-0000-0000-0000-000000000001','CCA B','cca-b','essencial','active');
 insert into public.memberships(organization_id,user_id,role)
-select 'a5000000-0000-0000-0000-000000000001',id,case n when 1 then 'admin_youb' when 2 then 'rh' when 3 then 'diretoria' when 4 then 'gestor' when 5 then 'colaborador' else 'gestor' end from cca_users;
+select 'a5000000-0000-0000-0000-000000000001',id,case n when 1 then 'admin_youb' when 2 then 'rh' when 3 then 'diretoria' when 4 then 'gestor' when 5 then 'colaborador' end from cca_users where n <= 5;
 insert into public.memberships(organization_id,user_id,role) select 'b5000000-0000-0000-0000-000000000001',id,'rh' from cca_users where n=1;
 insert into public.positions(id,organization_id,name,level) values
  ('a5000000-0000-0000-0000-000000000011','a5000000-0000-0000-0000-000000000001','Engenharia','pleno'),
@@ -33,7 +33,13 @@ insert into public.employees(id,organization_id,auth_user_id,full_name,status,po
  ('a5000000-0000-0000-0000-000000000036','a5000000-0000-0000-0000-000000000001',null,'Sem cargo','active',null,'a5000000-0000-0000-0000-000000000034'),
  ('a5000000-0000-0000-0000-000000000037','a5000000-0000-0000-0000-000000000001',null,'Sem mapping','active','a5000000-0000-0000-0000-000000000012','a5000000-0000-0000-0000-000000000034'),
  ('a5000000-0000-0000-0000-000000000038','a5000000-0000-0000-0000-000000000001',null,'Fora','active','a5000000-0000-0000-0000-000000000013',null),
+ ('a5000000-0000-0000-0000-000000000039','a5000000-0000-0000-0000-000000000001',null,'Direto dois','active','a5000000-0000-0000-0000-000000000011','a5000000-0000-0000-0000-000000000034'),
+ ('a5000000-0000-0000-0000-000000000040','a5000000-0000-0000-0000-000000000001',null,'Direto três','active','a5000000-0000-0000-0000-000000000011','a5000000-0000-0000-0000-000000000034'),
  ('b5000000-0000-0000-0000-000000000031','b5000000-0000-0000-0000-000000000001',null,'Pessoa B','active','b5000000-0000-0000-0000-000000000011',null);
+insert into public.platform_memberships(user_id,platform_role) select id,'platform_analyst' from cca_users where n=6;
+insert into public.partners(id,name,slug) values ('c5000000-0000-0000-0000-000000000001','Partner CCA','cca-partner');
+insert into public.partner_memberships(partner_id,user_id,partner_role) select 'c5000000-0000-0000-0000-000000000001',id,'partner_operator' from cca_users where n=6;
+insert into public.partner_organization_access(partner_id,organization_id,access_scope,granted_by) values ('c5000000-0000-0000-0000-000000000001','a5000000-0000-0000-0000-000000000001','reporting',(select id from cca_users where n=1));
 
 create or replace function pg_temp.assert_true(label text,v boolean) returns void language plpgsql as $$ begin if not v then raise exception '% expected true',label; end if; end $$;
 create or replace function pg_temp.assert_eq(label text,actual text,expected text) returns void language plpgsql as $$ begin if actual is distinct from expected then raise exception '% expected %, got %',label,expected,actual; end if; end $$;
@@ -46,6 +52,7 @@ create or replace function pg_temp.try_create_assessment(c uuid,s uuid,e uuid) r
 create or replace function pg_temp.try_update_score(a uuid,c uuid) returns boolean language plpgsql security invoker as $$ begin perform public.cca_save_assessment_score(a,c,5::smallint,'blocked'); return true; exception when others then return false; end $$;
 create or replace function pg_temp.try_bad_score(a uuid,c uuid) returns boolean language plpgsql security invoker as $$ begin perform public.cca_save_assessment_score(a,c,6::smallint,'x'); return true; exception when others then return false; end $$;
 create or replace function pg_temp.try_complete(a uuid) returns boolean language plpgsql security invoker as $$ begin perform public.cca_complete_assessment(a); return true; exception when others then return false; end $$;
+create or replace function pg_temp.try_aggregate(o uuid,c uuid) returns boolean language plpgsql security invoker as $$ begin perform * from public.cca_read_assessment_aggregate(o,c); return true; exception when others then return false; end $$;
 
 -- Cross-tenant FK and range checks are exercised as the local owner; application writes use RPCs.
 select pg_temp.assert_true('mapping cross-tenant FK rejected',not pg_temp.try_sql($q$insert into public.position_competencies(organization_id,position_id,competency_id,expected_level) values ('a5000000-0000-0000-0000-000000000001','b5000000-0000-0000-0000-000000000011','a5000000-0000-0000-0000-000000000021',3)$q$));
@@ -64,6 +71,9 @@ select pg_temp.assert_true('draft can activate',public.cca_activate_cycle(:'cycl
 select pg_temp.assert_true('active cannot return draft',not pg_temp.try_update_cycle(:'cycle_id'::uuid));
 select public.cca_create_cycle('a5000000-0000-0000-0000-000000000001','Ciclo Gestor','performance','2026-09-01','2026-12-31') as id \gset cycle2_
 select public.cca_activate_cycle(:'cycle2_id'::uuid);
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=1),false);
+select public.cca_create_cycle('b5000000-0000-0000-0000-000000000001','Ciclo B','performance','2026-09-01','2026-12-31') as id \gset cycle_b_
+select public.cca_activate_cycle(:'cycle_b_id'::uuid);
 select public.cca_create_cycle('a5000000-0000-0000-0000-000000000001','Ciclo Draft','performance',null,null) as id \gset draft_
 select pg_temp.assert_true('draft missing period cannot activate',not pg_temp.try_activate(:'draft_id'::uuid));
 select pg_temp.assert_true('draft cycle rejects assessment',not pg_temp.try_create_assessment(:'draft_id'::uuid,'a5000000-0000-0000-0000-000000000035','a5000000-0000-0000-0000-000000000034'));
@@ -100,10 +110,57 @@ select pg_temp.assert_true('completed score immutable',not pg_temp.try_update_sc
 select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=5),false);
 select pg_temp.assert_true('collaborator reads own completed',(select count(*)=1 from public.assessments where id=:'manager_assessment_id'::uuid));
 select pg_temp.assert_true('collaborator cannot write score',not pg_temp.try_update_score(:'manager_assessment_id'::uuid,'a5000000-0000-0000-0000-000000000021'::uuid));
+
+-- Aggregate authorization is explicit, tenant-bound and k-anonymous.
 select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=3),false);
 select pg_temp.assert_true('diretoria cannot read raw individual',(select count(*)=0 from public.assessments where organization_id='a5000000-0000-0000-0000-000000000001'));
+select pg_temp.assert_true('diretoria cannot read raw scores',(select count(*)=0 from public.assessment_competency_scores where organization_id='a5000000-0000-0000-0000-000000000001'));
 select pg_temp.assert_true('diretoria cannot edit cycle',not pg_temp.try_activate(:'cycle_id'::uuid));
-select pg_temp.assert_true('aggregate function returns no raw identity',(select count(*)>=1 from public.cca_read_assessment_aggregate(:'cycle2_id'::uuid)));
+select pg_temp.assert_true('one completed assessment is hidden',(select count(*)=0 from public.cca_read_assessment_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,:'cycle2_id'::uuid)));
+select pg_temp.assert_true('cross-tenant cycle is denied',not pg_temp.try_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,:'cycle_b_id'::uuid));
+select pg_temp.assert_true('tampered organization is denied',not pg_temp.try_aggregate('b5000000-0000-0000-0000-000000000001'::uuid,:'cycle2_id'::uuid));
+select pg_temp.assert_true('nonexistent cycle fails closed',not pg_temp.try_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid));
+select pg_temp.assert_true('aggregate shape excludes raw identity',(select not (array_to_string(proargnames,',') ~ '(employee|evaluator|comment|evidence)') from pg_proc where oid='public.cca_read_assessment_aggregate(uuid,uuid)'::regprocedure));
+select pg_temp.assert_true('legacy aggregate signature removed',to_regprocedure('public.cca_read_assessment_aggregate(uuid)') is null);
+select pg_temp.assert_true('aggregate execute only authenticated',not has_function_privilege('anon','public.cca_read_assessment_aggregate(uuid,uuid)','execute') and has_function_privilege('authenticated','public.cca_read_assessment_aggregate(uuid,uuid)','execute'));
+select pg_temp.assert_true('all PR14 security definer functions pin search_path',(select bool_and(prosecdef and array_to_string(proconfig,',') like '%search_path=public%' and array_to_string(proconfig,',') like '%pg_temp%') from pg_proc where pronamespace='public'::regnamespace and proname like 'cca_%'));
+
+-- A second completed assessment is still below threshold 3.
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=1),false);
+select public.cca_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000039'::uuid,'a5000000-0000-0000-0000-000000000034'::uuid) as id \gset aggregate_two_
+select public.cca_save_assessment_score(:'aggregate_two_id'::uuid,'a5000000-0000-0000-0000-000000000021'::uuid,4::smallint,'second evidence');
+select public.cca_save_assessment_score(:'aggregate_two_id'::uuid,'a5000000-0000-0000-0000-000000000022'::uuid,3::smallint,'second delivery');
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=4),false);
+select public.cca_submit_assessment(:'aggregate_two_id'::uuid);
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=2),false);
+select public.cca_complete_assessment(:'aggregate_two_id'::uuid);
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=3),false);
+select pg_temp.assert_true('two completed assessments are hidden',(select count(*)=0 from public.cca_read_assessment_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,:'cycle2_id'::uuid)));
+
+-- Three completed assessments allow a group, but a competency with only two scores stays hidden.
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=1),false);
+select public.cca_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000040'::uuid,'a5000000-0000-0000-0000-000000000034'::uuid) as id \gset aggregate_three_
+select public.cca_save_assessment_score(:'aggregate_three_id'::uuid,'a5000000-0000-0000-0000-000000000021'::uuid,2::smallint,'third evidence');
+select public.cca_save_assessment_score(:'aggregate_three_id'::uuid,'a5000000-0000-0000-0000-000000000022'::uuid,2::smallint,'third delivery');
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=4),false);
+select public.cca_submit_assessment(:'aggregate_three_id'::uuid);
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=2),false);
+select public.cca_complete_assessment(:'aggregate_three_id'::uuid);
+reset role;
+delete from public.assessment_competency_scores where assessment_id=:'aggregate_three_id'::uuid and competency_id='a5000000-0000-0000-0000-000000000022'::uuid;
+set local role authenticated;
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=3),false);
+select pg_temp.assert_true('three completed scores expose only sufficiently populated groups',(select count(*)=1 and count(*) filter(where competency_id='a5000000-0000-0000-0000-000000000021')=1 and count(*) filter(where competency_id='a5000000-0000-0000-0000-000000000022')=0 and min(assessment_count)=3 from public.cca_read_assessment_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,:'cycle2_id'::uuid)));
+
+-- Manager, collaborator, unassigned user and platform/partner identities never receive the RPC.
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=4),false);
+select pg_temp.assert_true('manager aggregate denied',not pg_temp.try_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,:'cycle2_id'::uuid));
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=5),false);
+select pg_temp.assert_true('collaborator aggregate denied',not pg_temp.try_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,:'cycle2_id'::uuid));
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=7),false);
+select pg_temp.assert_true('user without membership aggregate denied',not pg_temp.try_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,:'cycle2_id'::uuid));
+select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=6),false);
+select pg_temp.assert_true('platform and partner aggregate denied',not pg_temp.try_aggregate('a5000000-0000-0000-0000-000000000001'::uuid,:'cycle2_id'::uuid));
 
 reset role;
 rollback;

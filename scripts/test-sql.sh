@@ -29,7 +29,8 @@ insert into auth.users(id,email,created_at) values
  ('10000000-0000-0000-0000-000000000003','diretoria@example.invalid','2026-01-03'),
  ('10000000-0000-0000-0000-000000000004','gestor@example.invalid','2026-01-04'),
  ('10000000-0000-0000-0000-000000000005','colaborador@example.invalid','2026-01-05'),
- ('10000000-0000-0000-0000-000000000006','sem-employee@example.invalid','2026-01-06');
+ ('10000000-0000-0000-0000-000000000006','platform@example.invalid','2026-01-06'),
+ ('10000000-0000-0000-0000-000000000007','unassigned@example.invalid','2026-01-07');
 SQL
 
 count=0

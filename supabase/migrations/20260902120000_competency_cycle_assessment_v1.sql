@@ -363,22 +363,36 @@ begin
   return true;
 end $$;
 
-create or replace function public.cca_read_assessment_aggregate(p_cycle_id uuid)
+drop function if exists public.cca_read_assessment_aggregate(uuid);
+create or replace function public.cca_read_assessment_aggregate(p_organization_id uuid,p_cycle_id uuid)
 returns table(cycle_id uuid,competency_id uuid,competency_name text,position_id uuid,position_name text,assessment_count bigint,average_score numeric)
-language sql stable security definer set search_path=public,pg_temp as $$
-  select a.cycle_id,s.competency_id,c.name,a.position_id,p.name,count(distinct a.id),round(avg(s.score)::numeric,2)
-  from public.assessments a
-  join public.assessment_competency_scores s on s.organization_id=a.organization_id and s.assessment_id=a.id
-  join public.competencies c on c.organization_id=s.organization_id and c.id=s.competency_id
-  join public.positions p on p.organization_id=a.organization_id and p.id=a.position_id
-  where a.cycle_id=p_cycle_id and a.status='completed' and s.score is not null
-    and public.has_org_role(a.organization_id,array['admin_youb','rh','diretoria'])
-  group by a.cycle_id,s.competency_id,c.name,a.position_id,p.name;
-$$;
+language plpgsql stable security definer set search_path=public,pg_temp as $$
+declare cycle_org uuid;
+begin
+  if auth.uid() is null or p_organization_id is null or p_cycle_id is null then
+    raise exception 'aggregate authorization is required' using errcode='42501';
+  end if;
+  if not public.has_org_role(p_organization_id,array['admin_youb','rh','diretoria']) then
+    raise exception 'aggregate is not authorized for this tenant' using errcode='42501';
+  end if;
+  select c.organization_id into cycle_org from public.cycles c where c.id=p_cycle_id;
+  if cycle_org is null or cycle_org <> p_organization_id then
+    raise exception 'cycle is outside the requested tenant' using errcode='42501';
+  end if;
+  return query
+    select a.cycle_id,s.competency_id,c.name,a.position_id,p.name,count(distinct a.id),round(avg(s.score)::numeric,2)
+    from public.assessments a
+    join public.assessment_competency_scores s on s.organization_id=a.organization_id and s.assessment_id=a.id
+    join public.competencies c on c.organization_id=s.organization_id and c.id=s.competency_id
+    join public.positions p on p.organization_id=a.organization_id and p.id=a.position_id
+    where a.organization_id=p_organization_id and a.cycle_id=p_cycle_id and a.status='completed' and s.score is not null
+    group by a.cycle_id,s.competency_id,c.name,a.position_id,p.name
+    having count(distinct a.id) >= 3;
+end $$;
 
 revoke all on function public.cca_set_updated_at(),public.cca_capture_assessment_position(),public.cca_employee_has_role(uuid,uuid,text[]),public.cca_is_assessment_manager(uuid,uuid),public.cca_can_manage_assessment(uuid,uuid) from public;
-revoke all on function public.cca_create_competency(uuid,text,text),public.cca_update_competency(uuid,text,text,boolean),public.cca_create_position_competency(uuid,uuid,smallint),public.cca_update_position_competency(uuid,smallint,boolean),public.cca_deactivate_position_competency(uuid),public.cca_create_cycle(uuid,text,text,date,date),public.cca_update_draft_cycle(uuid,text,date,date),public.cca_activate_cycle(uuid),public.cca_close_cycle(uuid),public.cca_create_assessment(uuid,uuid,uuid),public.cca_save_assessment_score(uuid,uuid,smallint,text),public.cca_submit_assessment(uuid),public.cca_complete_assessment(uuid),public.cca_read_assessment_aggregate(uuid) from public;
-grant execute on function public.cca_create_competency(uuid,text,text),public.cca_update_competency(uuid,text,text,boolean),public.cca_create_position_competency(uuid,uuid,smallint),public.cca_update_position_competency(uuid,smallint,boolean),public.cca_deactivate_position_competency(uuid),public.cca_create_cycle(uuid,text,text,date,date),public.cca_update_draft_cycle(uuid,text,date,date),public.cca_activate_cycle(uuid),public.cca_close_cycle(uuid),public.cca_create_assessment(uuid,uuid,uuid),public.cca_save_assessment_score(uuid,uuid,smallint,text),public.cca_submit_assessment(uuid),public.cca_complete_assessment(uuid),public.cca_read_assessment_aggregate(uuid) to authenticated;
+revoke all on function public.cca_create_competency(uuid,text,text),public.cca_update_competency(uuid,text,text,boolean),public.cca_create_position_competency(uuid,uuid,smallint),public.cca_update_position_competency(uuid,smallint,boolean),public.cca_deactivate_position_competency(uuid),public.cca_create_cycle(uuid,text,text,date,date),public.cca_update_draft_cycle(uuid,text,date,date),public.cca_activate_cycle(uuid),public.cca_close_cycle(uuid),public.cca_create_assessment(uuid,uuid,uuid),public.cca_save_assessment_score(uuid,uuid,smallint,text),public.cca_submit_assessment(uuid),public.cca_complete_assessment(uuid),public.cca_read_assessment_aggregate(uuid,uuid) from public;
+grant execute on function public.cca_create_competency(uuid,text,text),public.cca_update_competency(uuid,text,text,boolean),public.cca_create_position_competency(uuid,uuid,smallint),public.cca_update_position_competency(uuid,smallint,boolean),public.cca_deactivate_position_competency(uuid),public.cca_create_cycle(uuid,text,text,date,date),public.cca_update_draft_cycle(uuid,text,date,date),public.cca_activate_cycle(uuid),public.cca_close_cycle(uuid),public.cca_create_assessment(uuid,uuid,uuid),public.cca_save_assessment_score(uuid,uuid,smallint,text),public.cca_submit_assessment(uuid),public.cca_complete_assessment(uuid),public.cca_read_assessment_aggregate(uuid,uuid) to authenticated;
 grant execute on function public.cca_is_assessment_manager(uuid,uuid),public.cca_can_manage_assessment(uuid,uuid) to authenticated;
 
 comment on column public.assessments.scores is 'Legacy compatibility JSONB only. New Competency + Cycle + Assessment V1 scores are authoritative in assessment_competency_scores.';

@@ -34,4 +34,4 @@ export async function readCcaData(session: SupabaseSession, organizationId: stri
 }
 
 export async function readAssessmentScores(session: SupabaseSession, organizationId: string, assessmentId: string): Promise<CcaScore[]> { return request<CcaScore[]>(session, `assessment_competency_scores?select=id,assessment_id,competency_id,position_competency_id,expected_level_snapshot,score,evidence_note&organization_id=eq.${enc(organizationId)}&assessment_id=eq.${enc(assessmentId)}&order=competency_id`); }
-export async function readAggregate(session: SupabaseSession, cycleId: string): Promise<CcaAggregate[]> { return rpc<CcaAggregate[]>(session, "cca_read_assessment_aggregate", { p_cycle_id: cycleId }); }
+export async function readAggregate(session: SupabaseSession, organizationId: string, cycleId: string): Promise<CcaAggregate[]> { return rpc<CcaAggregate[]>(session, "cca_read_assessment_aggregate", { p_organization_id: organizationId, p_cycle_id: cycleId }); }
