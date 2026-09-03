@@ -3,9 +3,12 @@ set -euo pipefail
 
 : "${DATABASE_URL:=postgresql://postgres:postgres@127.0.0.1:5432/postgres}"
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-psql_cmd=(psql "$DATABASE_URL" -v ON_ERROR_STOP=1)
+log_file="$(mktemp)"
+cleanup() { status=$?; if [ "$status" -ne 0 ]; then echo '--- SQL validation diagnostics ---'; tail -120 "$log_file"; fi; rm -f "$log_file"; exit "$status"; }
+trap cleanup EXIT
 
-"${psql_cmd[@]}" <<'SQL'
+psql_base=(psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -1)
+"${psql_base[@]}" > /dev/null 2>>"$log_file" <<'SQL'
 create extension if not exists pgcrypto;
 create schema if not exists auth;
 drop role if exists authenticated;
@@ -31,13 +34,11 @@ SQL
 
 count=0
 for migration in "$repo_root"/supabase/migrations/*.sql; do
-  psql_cmd+=( -f "$migration" )
-  "${psql_cmd[@]}" >/dev/null
-  psql_cmd=(psql "$DATABASE_URL" -v ON_ERROR_STOP=1)
+  "${psql_base[@]}" -f "$migration" > /dev/null 2>>"$log_file"
   count=$((count+1))
 done
 echo "MIGRATIONS_PASS=$count"
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$repo_root/supabase/tests/classic_dho_access_v1.sql" >/dev/null
+"${psql_base[@]}" -f "$repo_root/supabase/tests/classic_dho_access_v1.sql" > /dev/null 2>>"$log_file"
 echo "CLASSIC_SQL_SUITE=PASS"
-psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$repo_root/supabase/tests/competency_cycle_assessment_v1.sql" >/dev/null
+"${psql_base[@]}" -f "$repo_root/supabase/tests/competency_cycle_assessment_v1.sql" > /dev/null 2>>"$log_file"
 echo "CCA_SQL_SUITE=PASS"
