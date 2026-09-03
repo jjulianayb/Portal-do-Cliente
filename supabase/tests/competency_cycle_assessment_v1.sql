@@ -79,10 +79,10 @@ select pg_temp.assert_true('active can close',public.cca_close_cycle(:'cycle_id'
 select pg_temp.assert_true('closed cannot reactivate',not pg_temp.try_activate(:'cycle_id'::uuid));
 select pg_temp.assert_true('employee without position explicit failure',not pg_temp.try_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000036','a5000000-0000-0000-0000-000000000034'));
 select pg_temp.assert_true('position without mapping explicit failure',not pg_temp.try_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000037','a5000000-0000-0000-0000-000000000034'));
-select pg_temp.assert_true('manager cannot create outside population',not pg_temp.try_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000038','a5000000-0000-0000-0000-000000000034'));
 
 -- Manager path: direct report only, scores 1–5, submit; RH completes.
 select set_config('request.jwt.claim.sub',(select id::text from cca_users where n=4),false);
+select pg_temp.assert_true('manager cannot create outside population',not pg_temp.try_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000038','a5000000-0000-0000-0000-000000000034'));
 select pg_temp.assert_true('manager sees direct mapping only',(select count(*)=2 from public.position_competencies));
 select public.cca_create_assessment(:'cycle2_id'::uuid,'a5000000-0000-0000-0000-000000000035','a5000000-0000-0000-0000-000000000034') as id \gset manager_assessment_
 select public.cca_save_assessment_score(:'manager_assessment_id'::uuid,'a5000000-0000-0000-0000-000000000021'::uuid,5::smallint,'evidência');
