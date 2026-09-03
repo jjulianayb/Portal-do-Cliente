@@ -128,10 +128,10 @@ select set_config('request.jwt.claim.sub', (select id::text from classic_access_
 select pg_temp.assert_count('rh own employees', (select count(*) from public.employees where organization_id = 'a3000000-0000-0000-0000-000000000001'), 7);
 select pg_temp.assert_count('rh cannot see tenant B', (select count(*) from public.employees where organization_id = 'b3000000-0000-0000-0000-000000000001'), 0);
 
--- H: diretoria has organizational employee/assessment visibility but no sensitive raw rows.
+-- H: diretoria sees organizational people but no raw individual assessments.
 select set_config('request.jwt.claim.sub', (select id::text from classic_access_users where n=3), false);
 select pg_temp.assert_count('diretoria employees', (select count(*) from public.employees where organization_id = 'a3000000-0000-0000-0000-000000000001'), 7);
-select pg_temp.assert_count('diretoria assessments', (select count(*) from public.assessments where organization_id = 'a3000000-0000-0000-0000-000000000001'), 3);
+select pg_temp.assert_count('diretoria raw assessments denied', (select count(*) from public.assessments where organization_id = 'a3000000-0000-0000-0000-000000000001'), 0);
 select pg_temp.assert_count('diretoria raw feedback denied', (select count(*) from public.feedbacks where organization_id = 'a3000000-0000-0000-0000-000000000001'), 0);
 
 -- D, E, J, K, L, M, N, O, V: direct reports only; IDs and area/cargo cannot expand scope.
@@ -153,7 +153,7 @@ select pg_temp.assert_count('unlinked manager checkins', (select count(*) from p
 -- B, C, J, K, L, M: collaborator sees only own authorized context.
 select set_config('request.jwt.claim.sub', (select id::text from classic_access_users where n=5), false);
 select pg_temp.assert_count('collaborator own employee', (select count(*) from public.employees where organization_id = 'a3000000-0000-0000-0000-000000000001'), 1);
-select pg_temp.assert_count('collaborator own assessment', (select count(*) from public.assessments where organization_id = 'a3000000-0000-0000-0000-000000000001'), 1);
+select pg_temp.assert_count('collaborator incomplete assessment denied', (select count(*) from public.assessments where organization_id = 'a3000000-0000-0000-0000-000000000001'), 0);
 select pg_temp.assert_count('collaborator own feedback', (select count(*) from public.feedbacks where organization_id = 'a3000000-0000-0000-0000-000000000001'), 1);
 select pg_temp.assert_count('collaborator own pdi', (select count(*) from public.pdis where organization_id = 'a3000000-0000-0000-0000-000000000001'), 1);
 select pg_temp.assert_count('collaborator own checkin', (select count(*) from public.checkins where organization_id = 'a3000000-0000-0000-0000-000000000001'), 1);
